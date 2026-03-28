@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventType {
+  page_view
+  add_to_cart
+  remove_from_cart
+  checkout_started
+  purchase
+}
+
+model Event {
+  id        String    @id @default(cuid())
+  eventId   String    @unique @map("event_id")
+  storeId   String    @map("store_id")
+  eventType EventType @map("event_type")
+  timestamp DateTime
+  productId String?   @map("product_id")
+  amount    Decimal?  @db.Decimal(10, 2)
+  currency  String?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([storeId, timestamp])
+  @@index([storeId, eventType, timestamp])
+  @@map("events")
+}
+
+model StoreDailyStat {
+  id        String    @id @default(cuid())
+  storeId   String    @map("store_id")
+  date      DateTime  @db.Date
+  eventType EventType @map("event_type")
+  count     Int       @default(0)
+  revenue   Decimal   @default(0) @db.Decimal(10, 2)
+
+  @@unique([storeId, date, eventType])
+  @@index([storeId, date])
+  @@map("store_daily_stats")
+}

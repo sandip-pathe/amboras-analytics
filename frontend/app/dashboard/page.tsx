@@ -120,7 +120,7 @@ export default function DashboardPage() {
     checkoutsStarted: 0,
     purchases: 0,
     purchaseRate: 0,
-    asOf: new Date().toISOString(),
+    asOf: "2026-03-28T00:00:00Z",
   };
 
   if (!token) {
@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-[#fafaf9] bg-[radial-gradient(1200px_520px_at_8%_-18%,#ffffff,transparent),radial-gradient(1100px_560px_at_100%_0%,#f2eee6,transparent),linear-gradient(180deg,#fafaf9_0%,#f8f5ef_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
+      <main className="min-h-screen bg-[#fafaf9] bg-[radial-gradient(1200px_560px_at_10%_-20%,#ffffff_0%,rgba(255,255,255,0.72)_35%,transparent_70%),radial-gradient(1050px_560px_at_100%_0%,rgba(1,87,155,0.16)_0%,rgba(1,87,155,0.06)_34%,transparent_72%),linear-gradient(180deg,#fcfbf8_0%,#f3eee5_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
         <div className="mx-auto max-w-7xl space-y-4">
           <div className="h-20 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -150,7 +150,7 @@ export default function DashboardPage() {
 
   if (hasError || !overview.data || !topProducts.data || !recentActivity.data) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#fafaf9] bg-[linear-gradient(180deg,#fafaf9_0%,#f8f5ef_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
+      <main className="flex min-h-screen items-center justify-center bg-[#fafaf9] bg-[radial-gradient(950px_500px_at_100%_0%,rgba(1,87,155,0.14)_0%,rgba(1,87,155,0.04)_40%,transparent_72%),linear-gradient(180deg,#fcfbf8_0%,#f3eee5_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
         <div className="w-full max-w-md rounded-xl border border-[#e8e4de] bg-white p-6 text-center">
           <p className="text-sm text-[#7d7a73]">
             Could not load analytics data.
@@ -171,7 +171,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#fafaf9] bg-[radial-gradient(1200px_520px_at_8%_-18%,#ffffff,transparent),radial-gradient(1100px_560px_at_100%_0%,#f2eee6,transparent),linear-gradient(180deg,#fafaf9_0%,#f8f5ef_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
+    <main className="min-h-screen bg-[#fafaf9] bg-[radial-gradient(1200px_560px_at_10%_-20%,#ffffff_0%,rgba(255,255,255,0.72)_35%,transparent_70%),radial-gradient(1050px_560px_at_100%_0%,rgba(1,87,155,0.16)_0%,rgba(1,87,155,0.06)_34%,transparent_72%),linear-gradient(180deg,#fcfbf8_0%,#f3eee5_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
       <div className="mx-auto max-w-7xl space-y-5">
         <header className="rounded-xl border border-[#e8e4de] bg-white/95 p-5 backdrop-blur-[2px] sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -255,6 +255,7 @@ export default function DashboardPage() {
           <MetricCard
             label="Today's Revenue"
             value={formatCurrency(overview.data.revenue.today)}
+            variant="primary"
           />
           <MetricCard
             label="This week's revenue"

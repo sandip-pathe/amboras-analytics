@@ -21,7 +21,7 @@ type AnalyticsRange = {
   endExclusiveTimestamp: Date;
 };
 
-type LiveVisitorsSummary = {
+export type LiveVisitorsSummary = {
   windowMinutes: number;
   activeVisitors: number;
   pageViews: number;
@@ -261,7 +261,10 @@ export class AnalyticsService {
     };
   }
 
-  async getLiveVisitors(storeId: string, windowMinutesRaw?: number) {
+  async getLiveVisitors(
+    storeId: string,
+    windowMinutesRaw?: number,
+  ): Promise<LiveVisitorsSummary> {
     const windowMinutes =
       typeof windowMinutesRaw === 'number' && Number.isFinite(windowMinutesRaw)
         ? Math.min(Math.max(Math.floor(windowMinutesRaw), 1), 120)

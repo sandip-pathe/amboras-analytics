@@ -73,10 +73,26 @@ async function request<T>(
     }
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  const primaryUrl = `${API_URL}${path}`;
+  let response: Response;
+
+  try {
+    response = await fetch(primaryUrl, {
+      ...init,
+      headers,
+    });
+  } catch (error) {
+    // Some Windows network setups intermittently fail localhost resolution in browsers.
+    if (API_URL.includes("localhost")) {
+      const fallbackUrl = `${API_URL.replace("localhost", "127.0.0.1")}${path}`;
+      response = await fetch(fallbackUrl, {
+        ...init,
+        headers,
+      });
+    } else {
+      throw error;
+    }
+  }
 
   if (!response.ok) {
     throw new Error(`Request failed with status ${response.status}`);

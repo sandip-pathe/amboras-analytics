@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 type AuthState = {
   token: string | null;
@@ -26,42 +26,52 @@ function decodeStoreId(token: string): string | null {
   }
 }
 
-export function useAuth(): AuthState {
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
+const TOKEN_KEY = "amboras_token";
+const AUTH_CHANGED_EVENT = "amboras-auth-changed";
 
-    return localStorage.getItem("amboras_token");
-  });
+function getTokenSnapshot(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function subscribeToToken(onStoreChange: () => void): () => void {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  const handler = () => onStoreChange();
+  window.addEventListener("storage", handler);
+  window.addEventListener(AUTH_CHANGED_EVENT, handler);
+
+  return () => {
+    window.removeEventListener("storage", handler);
+    window.removeEventListener(AUTH_CHANGED_EVENT, handler);
+  };
+}
+
+export function useAuth(): AuthState {
+  const token = useSyncExternalStore(
+    subscribeToToken,
+    getTokenSnapshot,
+    () => null,
+  );
 
   const storeId = useMemo(() => (token ? decodeStoreId(token) : null), [token]);
 
-  useEffect(() => {
-    const syncToken = (event: StorageEvent) => {
-      if (event.key === "amboras_token") {
-        setToken(event.newValue);
-      }
-    };
-
-    window.addEventListener("storage", syncToken);
-    return () => {
-      window.removeEventListener("storage", syncToken);
-    };
-  }, []);
-
   const login = (newToken: string) => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("amboras_token", newToken);
+      localStorage.setItem(TOKEN_KEY, newToken);
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
     }
-    setToken(newToken);
   };
 
   const logout = () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("amboras_token");
+      localStorage.removeItem(TOKEN_KEY);
+      window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
     }
-    setToken(null);
   };
 
   return { token, storeId, login, logout };

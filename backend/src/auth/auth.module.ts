@@ -13,14 +13,22 @@ import { JwtAuthGuard } from './jwt-auth.guard';
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') ?? 'dev-secret-change-in-production',
-        signOptions: {
-          expiresIn:
-            (configService.get<string>('JWT_EXPIRES_IN') as StringValue | undefined) ??
-            ('7d' as StringValue),
-        },
-      }),
+      useFactory: (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+
+        if (!secret && process.env.NODE_ENV === 'production') {
+          throw new Error('JWT_SECRET must be set in production');
+        }
+
+        return {
+          secret: secret ?? 'dev-secret-change-in-production',
+          signOptions: {
+            expiresIn:
+              (configService.get<string>('JWT_EXPIRES_IN') as StringValue | undefined) ??
+              ('7d' as StringValue),
+          },
+        };
+      },
     }),
   ],
   controllers: [AuthController],

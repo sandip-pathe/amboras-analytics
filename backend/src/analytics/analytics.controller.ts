@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   MessageEvent,
+  Query,
   Req,
   Sse,
   UseGuards,
@@ -29,18 +30,50 @@ export class AnalyticsController {
   ) {}
 
   @Get('overview')
-  getOverview(@Req() req: AuthenticatedRequest) {
-    return this.analyticsService.getOverview(req.user.storeId);
+  getOverview(
+    @Req() req: AuthenticatedRequest,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getOverview(req.user.storeId, startDate, endDate);
   }
 
   @Get('top-products')
-  getTopProducts(@Req() req: AuthenticatedRequest) {
-    return this.analyticsService.getTopProducts(req.user.storeId);
+  getTopProducts(
+    @Req() req: AuthenticatedRequest,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getTopProducts(
+      req.user.storeId,
+      startDate,
+      endDate,
+    );
   }
 
   @Get('recent-activity')
-  getRecentActivity(@Req() req: AuthenticatedRequest) {
-    return this.analyticsService.getRecentActivity(req.user.storeId);
+  getRecentActivity(
+    @Req() req: AuthenticatedRequest,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.getRecentActivity(
+      req.user.storeId,
+      startDate,
+      endDate,
+    );
+  }
+
+  @Get('live-visitors')
+  getLiveVisitors(
+    @Req() req: AuthenticatedRequest,
+    @Query('windowMinutes') windowMinutesRaw?: string,
+  ) {
+    const parsedWindow = windowMinutesRaw
+      ? Number.parseInt(windowMinutesRaw, 10)
+      : undefined;
+
+    return this.analyticsService.getLiveVisitors(req.user.storeId, parsedWindow);
   }
 
   @Sse('live')
@@ -57,6 +90,28 @@ export class AnalyticsController {
         if (event.storeId === req.user.storeId) {
           observer.next({ data: event });
         }
+      };
+
+      this.eventEmitter.on('event.ingested', handler);
+
+      return () => {
+        this.eventEmitter.off('event.ingested', handler);
+      };
+    });
+  }
+
+  @Sse('live-visitors/stream')
+  liveVisitorsStream(@Req() req: AuthenticatedRequest): Observable<MessageEvent> {
+    return new Observable((observer) => {
+      const handler = async (event: { storeId: string }) => {
+        if (event.storeId !== req.user.storeId) {
+          return;
+        }
+
+        const snapshot = await this.analyticsService.getLiveVisitors(
+          req.user.storeId,
+        );
+        observer.next({ data: snapshot });
       };
 
       this.eventEmitter.on('event.ingested', handler);

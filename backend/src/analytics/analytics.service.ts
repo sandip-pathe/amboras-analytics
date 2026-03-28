@@ -15,28 +15,90 @@ type EventsByType = {
   purchase: number;
 };
 
+type AnalyticsRange = {
+  startDate: Date;
+  endDate: Date;
+  endExclusiveTimestamp: Date;
+};
+
+type LiveVisitorsSummary = {
+  windowMinutes: number;
+  activeVisitors: number;
+  pageViews: number;
+  cartsStarted: number;
+  checkoutsStarted: number;
+  purchases: number;
+  purchaseRate: number;
+  asOf: string;
+};
+
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getOverview(storeId: string) {
+  private resolveRange(startDateRaw?: string, endDateRaw?: string): AnalyticsRange {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
-    const thirtyDaysAgo = new Date(today);
-    thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 29);
+    const parsedEnd = endDateRaw ? new Date(endDateRaw) : new Date(today);
+    const endDate = Number.isNaN(parsedEnd.getTime()) ? new Date(today) : parsedEnd;
+    endDate.setUTCHours(0, 0, 0, 0);
 
-    const weekStart = new Date(today);
+    const parsedStart = startDateRaw ? new Date(startDateRaw) : null;
+    const startDate =
+      parsedStart && !Number.isNaN(parsedStart.getTime())
+        ? parsedStart
+        : (() => {
+            const fallback = new Date(endDate);
+            fallback.setUTCDate(fallback.getUTCDate() - 29);
+            return fallback;
+          })();
+
+    startDate.setUTCHours(0, 0, 0, 0);
+
+    if (startDate > endDate) {
+      const swappedStart = new Date(endDate);
+      const swappedEnd = new Date(startDate);
+      swappedStart.setUTCHours(0, 0, 0, 0);
+      swappedEnd.setUTCHours(0, 0, 0, 0);
+
+      const endExclusiveTimestamp = new Date(swappedEnd);
+      endExclusiveTimestamp.setUTCDate(endExclusiveTimestamp.getUTCDate() + 1);
+
+      return {
+        startDate: swappedStart,
+        endDate: swappedEnd,
+        endExclusiveTimestamp,
+      };
+    }
+
+    const endExclusiveTimestamp = new Date(endDate);
+    endExclusiveTimestamp.setUTCDate(endExclusiveTimestamp.getUTCDate() + 1);
+
+    return {
+      startDate,
+      endDate,
+      endExclusiveTimestamp,
+    };
+  }
+
+  async getOverview(storeId: string, startDateRaw?: string, endDateRaw?: string) {
+    const range = this.resolveRange(startDateRaw, endDateRaw);
+
+    const weekStart = new Date(range.endDate);
     weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
 
     const monthStart = new Date(
-      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1),
+      Date.UTC(range.endDate.getUTCFullYear(), range.endDate.getUTCMonth(), 1),
     );
 
     const rows = await this.prisma.storeDailyStat.findMany({
       where: {
         storeId,
-        date: { gte: thirtyDaysAgo },
+        date: {
+          gte: range.startDate,
+          lte: range.endDate,
+        },
       },
       orderBy: { date: 'asc' },
     });
@@ -59,9 +121,15 @@ export class AnalyticsService {
     let pageViewCount = 0;
 
     const revenueByDayMap = new Map<string, number>();
-    for (let i = 0; i < 30; i += 1) {
-      const d = new Date(thirtyDaysAgo);
-      d.setUTCDate(thirtyDaysAgo.getUTCDate() + i);
+    const dayCount =
+      Math.floor(
+        (range.endDate.getTime() - range.startDate.getTime()) /
+          (24 * 60 * 60 * 1000),
+      ) + 1;
+
+    for (let i = 0; i < dayCount; i += 1) {
+      const d = new Date(range.startDate);
+      d.setUTCDate(range.startDate.getUTCDate() + i);
       revenueByDayMap.set(d.toISOString().slice(0, 10), 0);
     }
 
@@ -78,7 +146,7 @@ export class AnalyticsService {
       if (row.eventType === 'purchase') {
         purchaseCount += countValue;
 
-        if (rowDate.getTime() === today.getTime()) {
+        if (rowDate.getTime() === range.endDate.getTime()) {
           revenue.today += revenueValue;
         }
 
@@ -125,7 +193,13 @@ export class AnalyticsService {
     };
   }
 
-  async getTopProducts(storeId: string) {
+  async getTopProducts(
+    storeId: string,
+    startDateRaw?: string,
+    endDateRaw?: string,
+  ) {
+    const range = this.resolveRange(startDateRaw, endDateRaw);
+
     const rows = await this.prisma.$queryRaw<
       Array<{ product_id: string; revenue: unknown; orders: unknown }>
     >`
@@ -133,7 +207,8 @@ export class AnalyticsService {
       FROM events
       WHERE store_id = ${storeId}
         AND event_type = 'purchase'
-        AND timestamp >= NOW() - INTERVAL '30 days'
+        AND timestamp >= ${range.startDate}
+        AND timestamp < ${range.endExclusiveTimestamp}
         AND product_id IS NOT NULL
       GROUP BY product_id
       ORDER BY revenue DESC
@@ -149,9 +224,21 @@ export class AnalyticsService {
     };
   }
 
-  async getRecentActivity(storeId: string) {
+  async getRecentActivity(
+    storeId: string,
+    startDateRaw?: string,
+    endDateRaw?: string,
+  ) {
+    const range = this.resolveRange(startDateRaw, endDateRaw);
+
     const events = await this.prisma.event.findMany({
-      where: { storeId },
+      where: {
+        storeId,
+        timestamp: {
+          gte: range.startDate,
+          lt: range.endExclusiveTimestamp,
+        },
+      },
       orderBy: { timestamp: 'desc' },
       take: 20,
       select: {
@@ -172,5 +259,55 @@ export class AnalyticsService {
         productId: event.productId,
       })),
     };
+  }
+
+  async getLiveVisitors(storeId: string, windowMinutesRaw?: number) {
+    const windowMinutes =
+      typeof windowMinutesRaw === 'number' && Number.isFinite(windowMinutesRaw)
+        ? Math.min(Math.max(Math.floor(windowMinutesRaw), 1), 120)
+        : 5;
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{ event_type: string; event_count: unknown }>
+    >`
+      SELECT event_type::text AS event_type, COUNT(*)::bigint AS event_count
+      FROM events
+      WHERE store_id = ${storeId}
+        AND timestamp >= NOW() - (${windowMinutes} * INTERVAL '1 minute')
+      GROUP BY event_type
+    `;
+
+    const counts = {
+      page_view: 0,
+      add_to_cart: 0,
+      remove_from_cart: 0,
+      checkout_started: 0,
+      purchase: 0,
+    };
+
+    for (const row of rows) {
+      const key = row.event_type as keyof typeof counts;
+      if (key in counts) {
+        counts[key] = Number(row.event_count ?? 0);
+      }
+    }
+
+    const pageViews = counts.page_view;
+    const purchases = counts.purchase;
+
+    const summary: LiveVisitorsSummary = {
+      windowMinutes,
+      // Estimate until session/user tracking is introduced.
+      activeVisitors: pageViews,
+      pageViews,
+      cartsStarted: counts.add_to_cart,
+      checkoutsStarted: counts.checkout_started,
+      purchases,
+      purchaseRate:
+        pageViews === 0 ? 0 : Number(((purchases / pageViews) * 100).toFixed(2)),
+      asOf: new Date().toISOString(),
+    };
+
+    return summary;
   }
 }

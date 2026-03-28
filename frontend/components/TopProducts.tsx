@@ -1,5 +1,6 @@
 type TopProductsProps = {
   products: Array<{ productId: string; revenue: number; orders: number }>;
+  title?: string;
 };
 
 function formatCurrency(value: number) {
@@ -10,14 +11,14 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function TopProducts({ products }: TopProductsProps) {
+export function TopProducts({ products, title }: TopProductsProps) {
   return (
     <section className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
       <p className="mb-4 text-sm font-medium text-zinc-300">
-        Top Products (30 Days)
+        {title ?? "Top Products"}
       </p>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[420px] border-collapse text-left text-sm">
+        <table className="w-full min-w-105 border-collapse text-left text-sm">
           <thead>
             <tr className="border-b border-zinc-800 text-zinc-500">
               <th className="px-2 py-2 font-medium">Rank</th>

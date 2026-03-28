@@ -11,6 +11,7 @@ import {
 
 type RevenueChartProps = {
   data: Array<{ date: string; revenue: number }>;
+  title?: string;
 };
 
 function formatDateLabel(value: string) {
@@ -30,11 +31,11 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-export function RevenueChart({ data }: RevenueChartProps) {
+export function RevenueChart({ data, title }: RevenueChartProps) {
   return (
-    <section className="h-[320px] rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+    <section className="h-80 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
       <p className="mb-4 text-sm font-medium text-zinc-300">
-        Revenue (Last 30 Days)
+        {title ?? "Revenue"}
       </p>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type AuthState = {
   token: string | null;
@@ -37,13 +37,30 @@ export function useAuth(): AuthState {
 
   const storeId = useMemo(() => (token ? decodeStoreId(token) : null), [token]);
 
+  useEffect(() => {
+    const syncToken = (event: StorageEvent) => {
+      if (event.key === "amboras_token") {
+        setToken(event.newValue);
+      }
+    };
+
+    window.addEventListener("storage", syncToken);
+    return () => {
+      window.removeEventListener("storage", syncToken);
+    };
+  }, []);
+
   const login = (newToken: string) => {
-    localStorage.setItem("amboras_token", newToken);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("amboras_token", newToken);
+    }
     setToken(newToken);
   };
 
   const logout = () => {
-    localStorage.removeItem("amboras_token");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("amboras_token");
+    }
     setToken(null);
   };
 

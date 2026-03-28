@@ -27,9 +27,36 @@ type RecentActivityResponse = {
   }>;
 };
 
+type LiveVisitorsResponse = {
+  windowMinutes: number;
+  activeVisitors: number;
+  pageViews: number;
+  cartsStarted: number;
+  checkoutsStarted: number;
+  purchases: number;
+  purchaseRate: number;
+  asOf: string;
+};
+
 type TokenResponse = {
   access_token: string;
 };
+
+type DateRangeParams = {
+  startDate?: string;
+  endDate?: string;
+};
+
+function withDateRange(path: string, params?: DateRangeParams): string {
+  if (!params?.startDate && !params?.endDate) {
+    return path;
+  }
+
+  const query = new URLSearchParams();
+  if (params.startDate) query.set("startDate", params.startDate);
+  if (params.endDate) query.set("endDate", params.endDate);
+  return `${path}?${query.toString()}`;
+}
 
 async function request<T>(
   path: string,
@@ -58,16 +85,28 @@ async function request<T>(
   return (await response.json()) as T;
 }
 
-export function getOverview() {
-  return request<OverviewResponse>("/api/v1/analytics/overview");
+export function getOverview(params?: DateRangeParams) {
+  return request<OverviewResponse>(
+    withDateRange("/api/v1/analytics/overview", params),
+  );
 }
 
-export function getTopProducts() {
-  return request<TopProductsResponse>("/api/v1/analytics/top-products");
+export function getTopProducts(params?: DateRangeParams) {
+  return request<TopProductsResponse>(
+    withDateRange("/api/v1/analytics/top-products", params),
+  );
 }
 
-export function getRecentActivity() {
-  return request<RecentActivityResponse>("/api/v1/analytics/recent-activity");
+export function getRecentActivity(params?: DateRangeParams) {
+  return request<RecentActivityResponse>(
+    withDateRange("/api/v1/analytics/recent-activity", params),
+  );
+}
+
+export function getLiveVisitors(windowMinutes = 5) {
+  return request<LiveVisitorsResponse>(
+    `/api/v1/analytics/live-visitors?windowMinutes=${windowMinutes}`,
+  );
 }
 
 export function postToken(storeId: string) {
@@ -85,5 +124,7 @@ export type {
   OverviewResponse,
   TopProductsResponse,
   RecentActivityResponse,
+  LiveVisitorsResponse,
   TokenResponse,
+  DateRangeParams,
 };

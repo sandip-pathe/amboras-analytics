@@ -1,9 +1,19 @@
 import 'dotenv/config';
-import { createId } from '@paralleldrive/cuid2';
-import { EventType, Prisma, PrismaClient } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
+import { PrismaClient } from '@prisma/client';
 import { sign } from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
+
+const EVENT_TYPES = {
+  page_view: 'page_view',
+  add_to_cart: 'add_to_cart',
+  remove_from_cart: 'remove_from_cart',
+  checkout_started: 'checkout_started',
+  purchase: 'purchase',
+} as const;
+
+type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
 
 const STORES = ['store_alpha', 'store_beta', 'store_gamma'] as const;
 const PRODUCTS = Array.from({ length: 20 }, (_, i) => `prod_${String(i + 1).padStart(3, '0')}`);
@@ -11,17 +21,17 @@ const TOTAL_EVENTS = Number(process.env.SEED_TOTAL_EVENTS ?? 100_000);
 const BATCH_SIZE = Number(process.env.SEED_BATCH_SIZE ?? 500);
 
 const EVENT_WEIGHTS: Array<{ type: EventType; cumulative: number }> = [
-  { type: EventType.page_view, cumulative: 0.65 },
-  { type: EventType.add_to_cart, cumulative: 0.8 },
-  { type: EventType.remove_from_cart, cumulative: 0.85 },
-  { type: EventType.checkout_started, cumulative: 0.92 },
-  { type: EventType.purchase, cumulative: 1 },
+  { type: EVENT_TYPES.page_view, cumulative: 0.65 },
+  { type: EVENT_TYPES.add_to_cart, cumulative: 0.8 },
+  { type: EVENT_TYPES.remove_from_cart, cumulative: 0.85 },
+  { type: EVENT_TYPES.checkout_started, cumulative: 0.92 },
+  { type: EVENT_TYPES.purchase, cumulative: 1 },
 ];
 
 function weightedEventType(): EventType {
   const r = Math.random();
   const match = EVENT_WEIGHTS.find((item) => r <= item.cumulative);
-  return match?.type ?? EventType.purchase;
+  return match?.type ?? EVENT_TYPES.purchase;
 }
 
 function randomStore(): (typeof STORES)[number] {
@@ -64,7 +74,7 @@ async function upsertDailyStat(
   eventType: EventType,
   amount: number,
 ): Promise<void> {
-  const statId = createId();
+  const statId = randomUUID();
 
   await prisma.$executeRaw`
     INSERT INTO store_daily_stats (id, store_id, date, event_type, count, revenue)
@@ -90,7 +100,7 @@ type PreparedEvent = {
   eventType: EventType;
   timestamp: Date;
   productId: string | null;
-  amount: Prisma.Decimal | null;
+  amount: number | null;
   currency: string | null;
   dateKey: Date;
   statRevenueIncrement: number;
@@ -123,17 +133,17 @@ async function seed() {
       const timestamp = randomTimestampWithin90Days();
       const dateKey = normalizeToUtcDay(timestamp);
 
-      const isPurchase = eventType === EventType.purchase;
+      const isPurchase = eventType === EVENT_TYPES.purchase;
       const amountNumber = isPurchase ? randomAmount() : 0;
 
       chunk.push({
-        id: createId(),
-        eventId: `evt_${createId()}`,
+        id: randomUUID(),
+        eventId: `evt_${randomUUID()}`,
         storeId,
         eventType,
         timestamp,
         productId: isPurchase ? randomProductId() : null,
-        amount: isPurchase ? new Prisma.Decimal(amountNumber) : null,
+        amount: isPurchase ? amountNumber : null,
         currency: isPurchase ? 'USD' : null,
         dateKey,
         statRevenueIncrement: amountNumber,
@@ -159,7 +169,7 @@ async function seed() {
         event.storeId,
         event.dateKey,
         event.eventType,
-        event.eventType === EventType.purchase ? event.statRevenueIncrement : 0,
+        event.eventType === EVENT_TYPES.purchase ? event.statRevenueIncrement : 0,
       );
     }
 

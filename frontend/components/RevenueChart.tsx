@@ -33,9 +33,9 @@ function formatCurrency(value: number) {
 
 export function RevenueChart({ data, title }: RevenueChartProps) {
   return (
-    <section className="h-80 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-      <p className="mb-4 text-sm font-medium text-zinc-300">
-        {title ?? "Revenue"}
+    <section className="h-80 p-1">
+      <p className="mb-3 text-sm font-medium text-[#474641]">
+        {title ?? "Revenue over time"}
       </p>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart
@@ -45,21 +45,25 @@ export function RevenueChart({ data, title }: RevenueChartProps) {
           <XAxis
             dataKey="date"
             tickFormatter={formatDateLabel}
-            stroke="#71717a"
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            stroke="#a3a09a"
+            tick={{ fill: "#8b8882", fontSize: 11 }}
             tickMargin={8}
+            axisLine={false}
+            tickLine={false}
           />
           <YAxis
-            stroke="#71717a"
-            tick={{ fill: "#71717a", fontSize: 11 }}
+            stroke="#a3a09a"
+            tick={{ fill: "#8b8882", fontSize: 11 }}
             tickFormatter={(v) => `$${v}`}
             width={64}
+            axisLine={false}
+            tickLine={false}
           />
           <Tooltip
             contentStyle={{
-              background: "#09090b",
-              border: "1px solid #27272a",
-              color: "#fafafa",
+              background: "#ffffff",
+              border: "1px solid #e8e4de",
+              color: "#1a1a1a",
               borderRadius: "10px",
             }}
             labelFormatter={(label) => formatDateLabel(String(label))}
@@ -68,10 +72,10 @@ export function RevenueChart({ data, title }: RevenueChartProps) {
           <Line
             type="monotone"
             dataKey="revenue"
-            stroke="#10b981"
+            stroke="#16a34a"
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 4, stroke: "#10b981", fill: "#10b981" }}
+            activeDot={{ r: 4, stroke: "#16a34a", fill: "#16a34a" }}
           />
         </LineChart>
       </ResponsiveContainer>

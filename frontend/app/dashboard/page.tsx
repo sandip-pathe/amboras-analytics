@@ -129,19 +129,19 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-gray-950 px-3 py-6 text-zinc-100 sm:px-6 sm:py-8">
+      <main className="min-h-screen bg-[#fafaf9] bg-[radial-gradient(1200px_520px_at_8%_-18%,#ffffff,transparent),radial-gradient(1100px_560px_at_100%_0%,#f2eee6,transparent),linear-gradient(180deg,#fafaf9_0%,#f8f5ef_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
         <div className="mx-auto max-w-7xl space-y-4">
-          <div className="h-20 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <div className="h-28 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />
-            <div className="h-28 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />
-            <div className="h-28 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />
-            <div className="h-28 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />
+          <div className="h-20 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="h-32 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
+            <div className="h-32 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
+            <div className="h-32 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
+            <div className="h-32 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
           </div>
-          <div className="h-32 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900" />
+          <div className="h-10 animate-pulse rounded-xl border border-[#ece9e3] bg-white" />
           <div className="grid gap-4 lg:grid-cols-5">
-            <div className="h-80 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900 lg:col-span-3" />
-            <div className="h-80 animate-pulse rounded-xl border border-zinc-800 bg-zinc-900 lg:col-span-2" />
+            <div className="h-80 animate-pulse rounded-xl border border-[#ece9e3] bg-white lg:col-span-3" />
+            <div className="h-80 animate-pulse rounded-xl border border-[#ece9e3] bg-white lg:col-span-2" />
           </div>
         </div>
       </main>
@@ -150,13 +150,13 @@ export default function DashboardPage() {
 
   if (hasError || !overview.data || !topProducts.data || !recentActivity.data) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-950 px-3 py-6 text-zinc-100 sm:px-6 sm:py-8">
-        <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-6 text-center">
-          <p className="text-sm text-zinc-400">
+      <main className="flex min-h-screen items-center justify-center bg-[#fafaf9] bg-[linear-gradient(180deg,#fafaf9_0%,#f8f5ef_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
+        <div className="w-full max-w-md rounded-xl border border-[#e8e4de] bg-white p-6 text-center">
+          <p className="text-sm text-[#7d7a73]">
             Could not load analytics data.
           </p>
           <button
-            className="mt-4 rounded-md border border-zinc-700 px-4 py-2 text-sm text-zinc-200 transition hover:bg-zinc-900"
+            className="mt-4 rounded-md border border-[#dcd7cf] px-4 py-2 text-sm text-[#474641] transition hover:bg-[#f3f1ec]"
             onClick={() => {
               overview.refetch();
               topProducts.refetch();
@@ -171,27 +171,27 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-950 px-3 py-6 text-zinc-100 sm:px-6 sm:py-8">
-      <div className="mx-auto max-w-7xl space-y-4">
-        <header className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+    <main className="min-h-screen bg-[#fafaf9] bg-[radial-gradient(1200px_520px_at_8%_-18%,#ffffff,transparent),radial-gradient(1100px_560px_at_100%_0%,#f2eee6,transparent),linear-gradient(180deg,#fafaf9_0%,#f8f5ef_100%)] px-3 py-6 text-[#1a1a1a] sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <header className="rounded-xl border border-[#e8e4de] bg-white/95 p-5 backdrop-blur-[2px] sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
+              <p className="text-xs uppercase tracking-[0.14em] text-[#8b8882]">
                 {toStoreName(storeId)}
               </p>
-              <h1 className="mt-2 text-xl font-semibold text-white sm:text-2xl">
-                Analytics Dashboard
+              <h1 className="mt-2 text-[1.35rem] font-semibold leading-tight tracking-[-0.01em] text-[#1a1a1a] sm:text-3xl">
+                How is your store doing?
               </h1>
             </div>
             <div className="flex items-center gap-3 self-start lg:self-auto">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
+              <div className="flex items-center gap-2 text-sm text-[#6f6d67]">
                 <span
-                  className={`h-2 w-2 rounded-full ${isConnected ? "bg-emerald-400 animate-pulse" : "bg-zinc-600"}`}
+                  className={`h-2 w-2 rounded-full ${isConnected ? "bg-green-600 animate-pulse" : "bg-[#bbb7b0]"}`}
                 />
                 {isConnected ? "Live" : "Connecting..."}
               </div>
               <button
-                className="rounded-md border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition hover:bg-zinc-900"
+                className="rounded-md border border-[#dcd7cf] px-3 py-2 text-sm text-[#474641] transition hover:bg-[#f3f1ec]"
                 onClick={() => {
                   logout();
                   router.replace("/login");
@@ -202,12 +202,12 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/40 p-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
-              <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-zinc-500 sm:min-w-40">
-                Range Preset
+          <div className="mt-5 flex flex-col items-start gap-3 rounded-lg border border-[#efece6] bg-[#fcfcfb] p-3 sm:items-end sm:p-4">
+            <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(9rem,auto)_minmax(9rem,auto)_minmax(9rem,auto)] lg:justify-end">
+              <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-[#8b8882] sm:min-w-32">
+                Range
                 <select
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-zinc-500 sm:w-auto"
+                  className="w-full rounded-md border border-[#dbd6cf] bg-white px-3 py-2 text-sm text-[#2e2d28] outline-none transition focus:border-[#ada9a1]"
                   value={rangePreset}
                   onChange={(event) =>
                     setRangePreset(
@@ -222,10 +222,10 @@ export default function DashboardPage() {
                 </select>
               </label>
 
-              <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-zinc-500 sm:min-w-36">
+              <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-[#8b8882] sm:min-w-36">
                 Start Date
                 <input
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-zinc-500 sm:w-auto"
+                  className="w-full rounded-md border border-[#dbd6cf] bg-white px-3 py-2 text-sm text-[#2e2d28] outline-none transition focus:border-[#ada9a1]"
                   type="date"
                   value={selectedRange.startDate}
                   onChange={(event) => {
@@ -235,10 +235,10 @@ export default function DashboardPage() {
                 />
               </label>
 
-              <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-zinc-500 sm:min-w-36">
+              <label className="flex flex-col gap-1 text-xs uppercase tracking-[0.12em] text-[#8b8882] sm:min-w-36">
                 End Date
                 <input
-                  className="w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-200 outline-none transition focus:border-zinc-500 sm:w-auto"
+                  className="w-full rounded-md border border-[#dbd6cf] bg-white px-3 py-2 text-sm text-[#2e2d28] outline-none transition focus:border-[#ada9a1]"
                   type="date"
                   value={selectedRange.endDate}
                   onChange={(event) => {
@@ -251,17 +251,17 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <MetricCard
             label="Today's Revenue"
             value={formatCurrency(overview.data.revenue.today)}
           />
           <MetricCard
-            label="This Week"
+            label="This week's revenue"
             value={formatCurrency(overview.data.revenue.thisWeek)}
           />
           <MetricCard
-            label="This Month"
+            label="This month's revenue"
             value={formatCurrency(overview.data.revenue.thisMonth)}
           />
           <LiveVisitorsCard
@@ -276,26 +276,24 @@ export default function DashboardPage() {
           />
         </section>
 
-        <section className="rounded-xl border border-zinc-800 bg-zinc-950 px-5 py-8 text-center">
-          <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
-            Conversion Rate
+        <section className="rounded-xl border border-[#e8e4de] bg-white/95 px-5 py-4 text-center backdrop-blur-[2px]">
+          <p className="text-sm text-[#6f6d67]">
+            {formatPercent(overview.data.conversionRate)} of visitors made a
+            purchase in the selected range
           </p>
-          <p className="mt-3 text-5xl font-semibold text-white">
-            {formatPercent(overview.data.conversionRate)}
-          </p>
-          <p className="mt-2 text-xs text-zinc-500">
-            purchases ÷ page views, selected {rangeDayCount}-day range
+          <p className="mt-1 text-xs text-[#8f8b84]">
+            Selected window: {rangeDayCount} days
           </p>
         </section>
 
         <section className="grid gap-4 lg:grid-cols-5">
-          <div className="lg:col-span-3">
+          <div className="rounded-xl border border-[#e8e4de] bg-white/95 p-3 backdrop-blur-[2px] lg:col-span-3">
             <RevenueChart
               data={overview.data.revenueByDay}
-              title={`Revenue - ${rangeLabel}`}
+              title={`Revenue over time - ${rangeLabel}`}
             />
           </div>
-          <div className="lg:col-span-2">
+          <div className="rounded-xl border border-[#e8e4de] bg-white/95 p-3 backdrop-blur-[2px] lg:col-span-2">
             <EventTypeChart eventsByType={overview.data.eventsByType} />
           </div>
         </section>

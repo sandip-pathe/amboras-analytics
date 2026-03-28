@@ -31,39 +31,45 @@ export function LiveVisitorsCard({
     : "--:--";
 
   return (
-    <article className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+    <article className="rounded-xl border border-[#e8e4de] bg-white/95 p-5 backdrop-blur-[2px] sm:p-6">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs uppercase tracking-[0.14em] text-zinc-500">
-          Live Visitors ({windowMinutes}m)
+        <p className="text-3xl font-semibold leading-none tracking-[-0.015em] text-[#1a1a1a] sm:text-4xl">
+          {activeVisitors}
         </p>
-        <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+        <span className="inline-flex items-center gap-2 text-xs text-[#6b6b66]">
+          <span className="h-2 w-2 rounded-full bg-[#16a34a] animate-pulse" />
           Live
         </span>
       </div>
 
-      <p className="mt-3 text-3xl font-semibold text-white">{activeVisitors}</p>
+      <p className="mt-2.5 text-[13px] leading-snug text-[#6b6b66]">
+        People on your store now
+      </p>
+      <p className="mt-1 text-xs text-[#888880]">
+        Last {windowMinutes} minutes
+      </p>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-zinc-400">
-        <div className="rounded border border-zinc-800 px-2 py-1.5">
-          Views: <span className="text-zinc-200">{pageViews}</span>
+      <div className="mt-4 grid grid-cols-1 gap-2 text-xs text-[#6b6b66] sm:grid-cols-2">
+        <div className="rounded border border-[#ece9e3] bg-[#fcfcfb] px-2 py-1.5">
+          Visitors: <span className="text-[#1a1a1a]">{pageViews}</span>
         </div>
-        <div className="rounded border border-zinc-800 px-2 py-1.5">
-          Carts: <span className="text-zinc-200">{cartsStarted}</span>
+        <div className="rounded border border-[#ece9e3] bg-[#fcfcfb] px-2 py-1.5">
+          Added to cart: <span className="text-[#1a1a1a]">{cartsStarted}</span>
         </div>
-        <div className="rounded border border-zinc-800 px-2 py-1.5">
-          Checkouts: <span className="text-zinc-200">{checkoutsStarted}</span>
+        <div className="rounded border border-[#ece9e3] bg-[#fcfcfb] px-2 py-1.5">
+          Started checkout:{" "}
+          <span className="text-[#1a1a1a]">{checkoutsStarted}</span>
         </div>
-        <div className="rounded border border-zinc-800 px-2 py-1.5">
-          Purchases: <span className="text-zinc-200">{purchases}</span>
+        <div className="rounded border border-[#ece9e3] bg-[#fcfcfb] px-2 py-1.5">
+          Sales: <span className="text-[#1a1a1a]">{purchases}</span>
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-zinc-500">
+      <p className="mt-3 text-xs text-[#888880]">
         Purchase rate:{" "}
-        <span className="text-zinc-200">{formatPercent(purchaseRate)}</span>
+        <span className="text-[#1a1a1a]">{formatPercent(purchaseRate)}</span>
       </p>
-      <p className="mt-1 text-xs text-zinc-600">As of {asOfLabel}</p>
+      <p className="mt-1 text-xs text-[#9a978f]">As of {asOfLabel}</p>
     </article>
   );
 }

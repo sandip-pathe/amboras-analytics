@@ -28,44 +28,63 @@ const EVENT_COLORS: Record<keyof EventsByType, string> = {
   add_to_cart: "#f59e0b",
   remove_from_cart: "#ef4444",
   checkout_started: "#8b5cf6",
-  purchase: "#10b981",
+  purchase: "#16a34a",
+};
+
+const EVENT_LABELS: Record<keyof EventsByType, string> = {
+  page_view: "Visitors",
+  add_to_cart: "Added to Cart",
+  remove_from_cart: "Removed from Cart",
+  checkout_started: "Started Checkout",
+  purchase: "Sales",
 };
 
 export function EventTypeChart({ eventsByType }: EventTypeChartProps) {
   const data = Object.entries(eventsByType).map(([name, value]) => ({
-    name,
+    name: EVENT_LABELS[name as keyof EventsByType],
+    key: name,
     value,
   }));
 
   return (
-    <section className="h-80 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-      <p className="mb-4 text-sm font-medium text-zinc-300">Events By Type</p>
+    <section className="h-80 p-1">
+      <p className="mb-3 text-sm font-medium text-[#474641]">Store Activity</p>
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-          <CartesianGrid stroke="#27272a" vertical={false} />
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ top: 4, right: 8, left: 8, bottom: 8 }}
+        >
+          <CartesianGrid stroke="#ece9e3" horizontal={false} />
           <XAxis
-            dataKey="name"
-            stroke="#71717a"
-            tick={{ fill: "#71717a", fontSize: 11 }}
-            interval={0}
-            angle={-20}
-            textAnchor="end"
-            height={60}
+            type="number"
+            stroke="#a3a09a"
+            tick={{ fill: "#8b8882", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
           />
-          <YAxis stroke="#71717a" tick={{ fill: "#71717a", fontSize: 11 }} />
+          <YAxis
+            dataKey="name"
+            type="category"
+            width={120}
+            stroke="#a3a09a"
+            tick={{ fill: "#595853", fontSize: 12 }}
+            axisLine={false}
+            tickLine={false}
+          />
           <Tooltip
             contentStyle={{
-              background: "#09090b",
-              border: "1px solid #27272a",
-              color: "#fafafa",
+              background: "#ffffff",
+              border: "1px solid #e8e4de",
+              color: "#1a1a1a",
               borderRadius: "10px",
             }}
           />
-          <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+          <Bar dataKey="value" radius={[0, 8, 8, 0]}>
             {data.map((entry) => (
               <Cell
-                key={entry.name}
-                fill={EVENT_COLORS[entry.name as keyof EventsByType]}
+                key={entry.key}
+                fill={EVENT_COLORS[entry.key as keyof EventsByType]}
               />
             ))}
           </Bar>

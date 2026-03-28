@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -10,6 +11,7 @@ import { PrismaModule } from './prisma/prisma.module';
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
     PrismaModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

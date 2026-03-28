@@ -262,18 +262,3 @@ The dashboard is the human interface. MCP is the machine interface. For an AI-na
 ## Time Spent
 
 Approximately 5.5 hours — backend ~1.5h, seed script ~20min, frontend ~1h, design iteration ~30min, MCP server ~45min, README + documentation ~45min.
-
-## Recording Your Own Demo
-
-Use the **VIDEO_OUTLINE provided** in the repo (it has exact talking points, timing, and curl commands pre-written).
-
-Key checklist before recording:
-- [ ] Backend running (`npm run start:dev`)
-- [ ] Frontend open at `http://localhost:3000` (already logged in)
-- [ ] Git repo cloned (show the clone URL in intro)
-- [ ] Terminal ready for live event curl
-- [ ] Chrome DevTools Network tab open to show request timings
-
-## Demo Video Link
-
-[Link to demo video will be added here]

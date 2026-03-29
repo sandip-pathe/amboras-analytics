@@ -7,8 +7,7 @@ I built everything the assignment asked for & Bonus Points tasks, plus an **MCP 
 ---
 
 ## 📹 Video Demo
-**[Watch the 8-minute walkthrough on YouTube](https://youtu.be/ZPBcP68M4h8)**
-![alt text](image.png)
+[![Amboras Analytics Dashboard Walkthrough](https://img.youtube.com/vi/ZPBcP68M4h8/maxresdefault.jpg)](https://youtu.be/ZPBcP68M4h8)
 
 ---
 

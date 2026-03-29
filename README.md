@@ -1,4 +1,4 @@
-# Amboras Analytics Dashboard
+# Store Analytics Dashboard
 
 Real-time, multi-tenant analytics dashboard for Amboras store owners. Each store owner logs in, sees only their data, and gets meaningful business insights, not raw event logs.
 
@@ -12,258 +12,107 @@ I built everything the assignment asked for & Bonus Points tasks, plus an **MCP 
 
 ---
 
-## Quick Start
-
-```bash
-git clone https://github.com/your-username/amboras-analytics.git
-cd amboras-analytics
-```
-
----
-
-## Quick Demo Start (3 terminals)
-
-If you just want to see it working:
-
-**Terminal 1 — Backend:**
-```bash
-cd backend
-npm install
-npx prisma migrate dev
-npx prisma db seed    # **Copy the JWT tokens printed here**
-npm run start:dev
-```
-
-**Terminal 2 — Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Terminal 3 — MCP (optional, after backend is running):**
-```bash
-cd backend
-npm run mcp:start
-```
-
-Then:
-1. Open `http://localhost:3000/login`
-2. Paste a token from seed output into the JWT field
-3. Start the demo
-
----
-
-## Tech Stack
-
-- **Backend:** NestJS + TypeScript + Prisma + PostgreSQL
-- **Frontend:** Next.js 14 (App Router) + TypeScript + Tailwind CSS
-- **Data fetching:** @tanstack/react-query v4 + Recharts
-- **Real-time:** Server-Sent Events via NestJS `@Sse()` + EventEmitter2
-- **Auth:** JWT with storeId in payload via @nestjs/jwt + passport-jwt
-
----
-
-## Setup
+## Setup Instructions
 
 **You'll need:** Node 18+, PostgreSQL running locally.
 
-### Backend
-
+### 1. Clone & Set up Backend
 ```bash
-cd backend
+git clone https://github.com/your-username/amboras-analytics.git
+cd amboras-analytics/backend
 npm install
 cp .env.example .env
 ```
-
-Set these in `.env`:
-
+Ensure your `.env` has:
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/amboras_analytics?schema=public"
 JWT_SECRET="dev-secret-change-in-production"
 ```
-
 ```bash
 npx prisma migrate dev
-npx prisma db seed    # seeds 100k events, logs JWTs for 3 stores
+npx prisma db seed    # speeds ~100k events, prints JWT tokens for login!
 npm run start:dev     # runs on http://localhost:3001
 ```
 
-### Frontend
-
+### 2. Set up Frontend
 ```bash
-cd frontend
+cd ../frontend
 npm install
 cp .env.example .env.local
 ```
-
-Set `.env.local` to:
-
+Ensure `.env.local` has:
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
-
 ```bash
 npm run dev           # runs on http://localhost:3000
 ```
 
-### Logging in
-
-When you run `npx prisma db seed`, you'll see output like:
-
-```
-✓ Seeded store_alpha: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdG9...
-✓ Seeded store_beta: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJzdG9...
-✓ Seeded store_gamma: ...
-```
-
-Copy the full token (starts with `eyJ...`) for any store.
-
+### 3. Log In to Dashboard
 1. Go to `http://localhost:3000/login`
-2. Enter the store ID (e.g. `store_alpha`) in the first field
-3. Paste the full JWT token in the second field
-4. Submit — you're logged in
+2. Look at your Terminal 1 (Backend start) for the Seed output.
+3. Enter the Store ID (e.g. `store_alpha`) and paste the generated JWT Token.
+4. Submit — you are now logged in!
 
-### Sending a test event (to see real-time in action)
-
-Replace `<YOUR_JWT>` with the token you copied above:
-
+### 4. Optional: Run MCP Server
+In a third terminal:
 ```bash
-curl -X POST http://localhost:3001/api/v1/events \
-  -H "Authorization: Bearer <YOUR_JWT>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "event_id": "evt_manual_001",
-    "store_id": "store_alpha",
-    "event_type": "purchase",
-    "timestamp": "2026-03-28T12:00:00.000Z",
-    "data": {
-      "product_id": "prod_001",
-      "amount": 129.99,
-      "currency": "USD"
-    }
-  }'
+cd backend
+npm run mcp:start 
 ```
-
-If you're logged in as that store, the event appears in the live activity feed instantly — no page refresh needed.
 
 ---
 
 ## Architecture Decisions
 
-### 1. Data Aggregation: Write-time, not Read-time
+### Data Aggregation Strategy
+- **Decision:** Write-time pre-aggregation instead of read-time computation. Every event ingestion also UPSERTs into a `store_daily_stats` table (one row per store, per day, per event type) using atomic `ON CONFLICT DO UPDATE` increments.
+- **Why:** The hard constraint was keeping the overview endpoint under <500ms "even with millions of events." A naive read-time SQL approach (`SELECT SUM...`) scales linearly with row count, meaning load times slow down precisely as exactly as the customer succeeds. Reading from pre-computed daily buckets turns tens of millions of rows into a maximum of 450 rows per 90-day window. O(1) latency regardless of scale.
+- **Trade-offs:** We sacrifice write-path simplicity. Every event write now creates write amplification (hitting two tables). A crash between the two writes could create a temporary inconsistency window (raw vs stats). I gained immense read-speed guarantees at the cost of eventual outbox/transaction complexity required for production.
 
-The assignment said the overview endpoint should return in <500ms "even with millions of events." That's the hard constraint. I took it seriously.
+### Real-time vs. Batch Processing
+- **Decision:** Real-time push using Server-Sent Events (SSE) combined with an application-layer `EventEmitter`.
+- **Why:** I deliberately chose not to use WebSockets. This dashboard is strictly unidirectional (Data streams Server -> Client, client never sends socket messages back). SSE runs over standard HTTP, leverages native browser reconnection APIs, and bypasses the handshake overhead of WebSockets. NestJS pairs this cleanly with RxJS Observables.
+- **Trade-offs:** Gained pure protocol simplicity. Sacrificed bidirectional capability (unnecessary here anyway). The current implementation uses an in-memory event emitter, meaning horizontal scale-out would break real-time routing unless bounded to Redis Pub/Sub, but the pattern established cleanly supports swapping brokers later. 
 
-The naive approach,  `SELECT SUM(amount) FROM events WHERE store_id = X AND date >= today`, works fine at 10,000 rows. At 10 million, it's a full index scan on every dashboard load. It gets slower as the business grows. That's the wrong shape for an analytics product.
+### Frontend Data Fetching
+- **Decision:** Total separation of pipelines: **React Query** manages historical aggregate data (snapshot), while a raw **custom React Hook + EventSource** connection manages the real-time event feed (patch).
+- **Why:** Mixing real-time patches into React Query's background cache mechanisms caused race conditions. Background invalidations (`stale-while-revalidate`) would continually overwrite prepend arrays sourced from the SSE connection. By splitting them, React Query definitively owns absolute truths, and the dedicated `useLiveFeed` handles pure un-persisted UI increments safely.
+- **Trade-offs:** We manage two sets of network boundaries instead of one unified data stream. It increases boilerplate marginally, but drastically guarantees pure component rendering cycles and predictable scope.
 
-**What I built instead:** every event ingestion also UPSERTs into a `store_daily_stats` table. One row per store, per day, per event type. Revenue and count are incremented atomically using PostgreSQL `ON CONFLICT DO UPDATE`.
+### Performance Optimizations
+- **Database Indexing:** Raw database queries (`Recent Activity`, `Top Products`) utilize strict composite indexes spanning `[store_id, timestamp]` and `[store_id, event_type, timestamp]`.
+- **Stale-While-Revalidate Caching:** Frontend React-Query components mask slow fetches by caching and passively updating data in 60-second background windows.
+- **Aggregated Polling:** "Live Visitors" snapshot avoids heavy recalculations. It polls aggregated snapshot data with 10-second intervals rather than piping every page view individually through the DOM.
+- **Micro-caching:** Rate-limiting UI layout reflows down to sliced arrays limits the DOM nodes rendered at any single sequence to a maximum of 20 elements. 
 
-The overview endpoint reads from `store_daily_stats` only, never touches raw events. For a store with 90 days of history and 5 event types, that's at most 450 rows. Whether the store has 33,000 events or 33 million, the read complexity doesn't change.
 
-**Trade-off I accepted:** write amplification. Every event write hits two tables. A crash between the two writes creates a small inconsistency window (raw events and stats diverge temporarily). I chose this because the read-time guarantee matters more at this stage, and the consistency risk is manageable with a transaction or outbox pattern when this goes to production.
+Measured with `curl` against 100,000 seeded events:
+- `GET /api/v1/analytics/overview`: **126ms** (Reads ~450 rows from `store_daily_stats`)
+- `GET /api/v1/analytics/top-products`: **52ms** (Indexed scan limit)
+- `GET /api/v1/analytics/recent-activity`: **38ms** (`LIMIT 20` on exact timestamps)
 
-I also considered materialized views (good, but refresh lag) and TimescaleDB continuous aggregates (the right long-term answer — I'd move here with more time). The pre-aggregated table is the simplest version of the right idea.
-
----
-
-### 2. Real-time: SSE, not WebSockets
-
-I want to be direct about this: a lot of people reach for WebSockets when they hear "real-time." I didn't, because WebSockets are bidirectional and this dashboard is purely read-only. The server pushes data to the client. The client never sends data back after connecting. There's no reason to pay the cost of full duplex.
-
-**Server-Sent Events** fit the data flow exactly. They run over plain HTTP, browsers handle reconnection automatically, and NestJS has native `@Sse()` support that wraps cleanly over an RxJS Observable.
-
-The flow: `POST /api/v1/events` → EventEmitter2 fires internally → SSE handler picks it up → browser receives the event → live feed updates. End-to-end under 100ms.
-
-The live-visitors card polls `GET /api/v1/analytics/live-visitors` with a 10-second interval and also subscribes to the `/api/v1/analytics/live-visitors/stream` SSE endpoint for immediate updates. It estimates active visitors from page_view volume in a rolling window.
-
-**One honest limitation:** `EventSource` in the browser doesn't support custom headers, so the JWT is passed as a query parameter for the SSE connection (`?token=...`). Tokens in server logs aren't ideal. In production I'd use a short-lived handshake token issued at connection time.
-
----
-
-### 3. Frontend: React Query + SSE as separate concerns
-
-React Query handles the three HTTP analytics endpoints with stale-while-revalidate caching and 60-second background refresh. The SSE live feed is managed in a separate `useLiveFeed` hook with a native `EventSource`.
-
-I kept them separate deliberately. Early on I tried merging them. React Query's background refetch was overwriting SSE events that had been prepended locally. The state kept getting clobbered. Separating them solved it cleanly: React Query owns aggregate snapshot data, SSE owns the incremental live feed. The `recent-activity` query gets `staleTime: Infinity` because SSE is already handling freshness for that piece.
-
-**Trade-off:** two data pipelines to reason about. Worth it for the state clarity.
-
----
-
-### 4. Multi-tenancy: JWT scoping at every layer
-
-Every analytics endpoint extracts `storeId` from the JWT payload via `JwtStrategy` and filters all queries to that store. The guard runs on every protected route. I tested this explicitly; logging in as `store_alpha` and confirming you cannot see `store_beta` data.
-
-The honest limitation here: application-level filtering is the primary enforcement layer. A future developer who adds an endpoint and forgets the `WHERE store_id` clause creates a data leak. The production fix is PostgreSQL **Row Level Security** RLS enforces isolation at the database level regardless of what the application code does. It's on my list.
-
----
-
-## Performance
-
-Measured with `curl -w "%{time_total}s"` against 100,000 seeded events (store_alpha: ~33k events, 90 days of history):
-
-| Endpoint | Time | Why |
-|---|---|---|
-| `GET /api/v1/analytics/overview` | **126ms** | Reads ~450 rows from store_daily_stats |
-| `GET /api/v1/analytics/top-products` | **52ms** | Indexed scan, purchases only, last 30 days |
-| `GET /api/v1/analytics/recent-activity` | **38ms** | LIMIT 20 on indexed timestamp |
-
-All endpoints stay well under the 500ms constraint. The pre-aggregated stats approach guarantees this regardless of event volume.
-
----
-
-## Beyond the Requirements: MCP Server
-
-The assignment had a bonus list: live visitors, real-time updates, date range filtering, performance optimizations. **I built all of those.
-
-I also added something not on the list: an MCP (Model Context Protocol) server via stdio.
-
-Here's why I think it matters for Amboras specifically.
-
-Amboras is positioned as an AI-native platform. the idea is that AI does everything from store creation to marketing to analytics. If that's true, the dashboard can't be the only interface to store data. An AI agent shouldn't have to scrape a web page to answer "how are my top products trending this week?" It should be able to call a tool directly.
-
-MCP is the protocol that makes that possible. It exposes backend functionality as structured, AI-callable tools. I built several tools including:
-
-- `get_overview` — fetches dashboard overview metrics for a single store
-- `get_top_products` — fetches top products for one store over an optional range
-- `get_recent_activity` — fetches the recent activity feed for one store
-- `get_live_visitors` — fetches live visitors snapshot in a rolling window
-- `get_dashboard_snapshot` — returns overview, top-products, recent-activity, and live-visitors in one call
-- `verify_store_isolation` — compares two stores for data isolation by checking product and event IDs
-
-The tools map to the same endpoints used by the dashboard and securely scope requests using the storeId, allowing an LLM to reason about the data and give concrete recommendations without exposing data from other tenants.
-
-### Running the MCP Server
-
-```bash
-# In a third terminal, from /backend:
-npm run mcp:start
-```
-
-The MCP server exposes the four tools above as callable functions for AI agents. It runs on stdio by default and integrates with Claude Desktop or other MCP clients.
-
-The dashboard is the human interface. MCP is the machine interface. For an AI-native product, both matter.
+All stay exceptionally safe below 500ms.
 
 ---
 
 ## Known Limitations
 
-1. **Auth is simplified.** storeId alone mints a token: no passwords, no user table. Intentional for assignment scope. Production needs real credentials or OAuth.
-2. **No transaction between event write and stats write.** A crash between the two creates temporary inconsistency. Fix: wrap in a Prisma transaction, or use a transactional outbox pattern.
-3. **SSE doesn't scale horizontally.** In-process EventEmitter only fans out to clients on the same server instance. Fix: Redis pub/sub as the broker.
-4. **Top-products still queries raw events.** Fine up to ~10M rows with indexes. Beyond that: dedicated product aggregates or TimescaleDB continuous aggregates.
-5. **No PostgreSQL RLS.** Tenant isolation is application-layer only today.
+1. **Authentication shortcut:** For demo scope, submitting a storeId inherently validates standard. Real scope requires true user verification and non-exposable tokens.
+2. **SSE Custom Headers:** Browser `EventSource` lacks native Header parameters for Authorization. It currently passes JWTs via URL query params (`?token`). In production, this would leverage ephemeral Short-Lived handshake tokens.
+3. **Database Consistency:** No Prisma Transaction wrapper currently exists bridging the `events` inject and `store_daily_stats`. A network interruption could offset stats.
+4. **Horizontal Scalability:** SSE and Local memory Node mapping limits real-time scaling to vertical instances. 
+5. **Data Row Level Security:** Tenant Isolation filters app side via Guard tokens, missing the robust database level RLS configurations PostgreSQL supports natively.
 
 ---
 
-## What I'd Add With More Time
+## What I'd Improve With More Time
 
-- **TimescaleDB continuous aggregates:**  replace the manual daily stats table with native time bucketing. More powerful, less operational burden.
-- **PostgreSQL Row Level Security:** database-level tenant isolation as a second enforcement layer.
-- **Redis pub/sub:** make SSE fan-out work across horizontally scaled API nodes.
-- **Transactional outbox:**  guarantee consistency between events, stats, and real-time notifications.
-- **Richer MCP tools:** inventory alerts, customer segmentation, anomaly detection. The foundation is there.
+- **TimescaleDB Continuous Aggregates:** Manually maintaining our `store_daily_stats` table demonstrates the mechanic. Doing it with Native TimescaleDB automates temporal bucketing via hyper-tables perfectly.
+- **PostgreSQL RLS (Row Level Security):** Setting hard security barriers via User Token injection directly into PG.
+- **Redis Pub/Sub:** Swapping Node's memory event emitter for Redis guarantees multi-cluster node propagation.
+- **Transactional Outbox Pattern:** Hard fail-safes linking the `event` commit and external `stat` aggregate pipeline reliably.
+- **Rich AI-Tooling:** Additional MCP tools allowing the agent to set alert triggers ("Ping me if Conversion Drops past X%").
 
 ---
 

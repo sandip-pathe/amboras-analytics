@@ -17,6 +17,7 @@ export function TopProducts({ products, title }: TopProductsProps) {
   const [animateBars, setAnimateBars] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAnimateBars(false);
     const timer = setTimeout(() => setAnimateBars(true), 40);
     return () => clearTimeout(timer);

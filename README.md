@@ -1,8 +1,14 @@
 # Amboras Analytics Dashboard
 
-Real-time, multi-tenant analytics dashboard for Amboras store owners. Each store owner logs in, sees only their data, and gets meaningful business insights — not raw event logs.
+Real-time, multi-tenant analytics dashboard for Amboras store owners. Each store owner logs in, sees only their data, and gets meaningful business insights, not raw event logs.
 
-I built everything the assignment asked for, plus an MCP server that exposes the analytics as AI-callable tools. More on why at the bottom.
+I built everything the assignment asked for & Bonus Points tasks, plus an **MCP server** that exposes the analytics as AI-callable tools. More on why at the bottom.
+
+---
+
+## 📹 Video Demo
+**[Watch the 8-minute walkthrough on YouTube](https://youtu.be/ZPBcP68M4h8)**
+![alt text](image.png)
 
 ---
 
@@ -145,15 +151,15 @@ If you're logged in as that store, the event appears in the live activity feed i
 
 ## Architecture Decisions
 
-### 1. Data Aggregation — Write-time, not Read-time
+### 1. Data Aggregation: Write-time, not Read-time
 
 The assignment said the overview endpoint should return in <500ms "even with millions of events." That's the hard constraint. I took it seriously.
 
-The naive approach — `SELECT SUM(amount) FROM events WHERE store_id = X AND date >= today` — works fine at 10,000 rows. At 10 million, it's a full index scan on every dashboard load. It gets slower as the business grows. That's the wrong shape for an analytics product.
+The naive approach,  `SELECT SUM(amount) FROM events WHERE store_id = X AND date >= today`, works fine at 10,000 rows. At 10 million, it's a full index scan on every dashboard load. It gets slower as the business grows. That's the wrong shape for an analytics product.
 
 **What I built instead:** every event ingestion also UPSERTs into a `store_daily_stats` table. One row per store, per day, per event type. Revenue and count are incremented atomically using PostgreSQL `ON CONFLICT DO UPDATE`.
 
-The overview endpoint reads from `store_daily_stats` only — never touches raw events. For a store with 90 days of history and 5 event types, that's at most 450 rows. Whether the store has 33,000 events or 33 million, the read complexity doesn't change.
+The overview endpoint reads from `store_daily_stats` only, never touches raw events. For a store with 90 days of history and 5 event types, that's at most 450 rows. Whether the store has 33,000 events or 33 million, the read complexity doesn't change.
 
 **Trade-off I accepted:** write amplification. Every event write hits two tables. A crash between the two writes creates a small inconsistency window (raw events and stats diverge temporarily). I chose this because the read-time guarantee matters more at this stage, and the consistency risk is manageable with a transaction or outbox pattern when this goes to production.
 
@@ -161,35 +167,35 @@ I also considered materialized views (good, but refresh lag) and TimescaleDB con
 
 ---
 
-### 2. Real-time — SSE, not WebSockets
+### 2. Real-time: SSE, not WebSockets
 
 I want to be direct about this: a lot of people reach for WebSockets when they hear "real-time." I didn't, because WebSockets are bidirectional and this dashboard is purely read-only. The server pushes data to the client. The client never sends data back after connecting. There's no reason to pay the cost of full duplex.
 
-Server-Sent Events fit the data flow exactly. They run over plain HTTP, browsers handle reconnection automatically, and NestJS has native `@Sse()` support that wraps cleanly over an RxJS Observable.
+**Server-Sent Events** fit the data flow exactly. They run over plain HTTP, browsers handle reconnection automatically, and NestJS has native `@Sse()` support that wraps cleanly over an RxJS Observable.
 
-The flow: `POST /events` → EventEmitter2 fires internally → SSE handler picks it up → browser receives the event → live feed updates. End-to-end under 100ms.
+The flow: `POST /api/v1/events` → EventEmitter2 fires internally → SSE handler picks it up → browser receives the event → live feed updates. End-to-end under 100ms.
 
-The live-visitors card polls `GET /api/v1/analytics/live-visitors` with a 10-second interval and also subscribes to the `/live-visitors/stream` SSE endpoint for immediate updates — it estimates active visitors from page_view volume in a rolling window.
+The live-visitors card polls `GET /api/v1/analytics/live-visitors` with a 10-second interval and also subscribes to the `/api/v1/analytics/live-visitors/stream` SSE endpoint for immediate updates. It estimates active visitors from page_view volume in a rolling window.
 
 **One honest limitation:** `EventSource` in the browser doesn't support custom headers, so the JWT is passed as a query parameter for the SSE connection (`?token=...`). Tokens in server logs aren't ideal. In production I'd use a short-lived handshake token issued at connection time.
 
 ---
 
-### 3. Frontend — React Query + SSE as separate concerns
+### 3. Frontend: React Query + SSE as separate concerns
 
 React Query handles the three HTTP analytics endpoints with stale-while-revalidate caching and 60-second background refresh. The SSE live feed is managed in a separate `useLiveFeed` hook with a native `EventSource`.
 
-I kept them separate deliberately. Early on I tried merging them — React Query's background refetch was overwriting SSE events that had been prepended locally. The state kept getting clobbered. Separating them solved it cleanly: React Query owns aggregate snapshot data, SSE owns the incremental live feed. The `recent-activity` query gets `staleTime: Infinity` because SSE is already handling freshness for that piece.
+I kept them separate deliberately. Early on I tried merging them. React Query's background refetch was overwriting SSE events that had been prepended locally. The state kept getting clobbered. Separating them solved it cleanly: React Query owns aggregate snapshot data, SSE owns the incremental live feed. The `recent-activity` query gets `staleTime: Infinity` because SSE is already handling freshness for that piece.
 
 **Trade-off:** two data pipelines to reason about. Worth it for the state clarity.
 
 ---
 
-### 4. Multi-tenancy — JWT scoping at every layer
+### 4. Multi-tenancy: JWT scoping at every layer
 
-Every analytics endpoint extracts `storeId` from the JWT payload via `JwtStrategy` and filters all queries to that store. The guard runs on every protected route. I tested this explicitly — logging in as `store_alpha` and confirming you cannot see `store_beta` data.
+Every analytics endpoint extracts `storeId` from the JWT payload via `JwtStrategy` and filters all queries to that store. The guard runs on every protected route. I tested this explicitly; logging in as `store_alpha` and confirming you cannot see `store_beta` data.
 
-The honest limitation here: application-level filtering is the primary enforcement layer. A future developer who adds an endpoint and forgets the `WHERE store_id` clause creates a data leak. The production fix is PostgreSQL Row Level Security — RLS enforces isolation at the database level regardless of what the application code does. It's on my list.
+The honest limitation here: application-level filtering is the primary enforcement layer. A future developer who adds an endpoint and forgets the `WHERE store_id` clause creates a data leak. The production fix is PostgreSQL **Row Level Security** RLS enforces isolation at the database level regardless of what the application code does. It's on my list.
 
 ---
 
@@ -199,32 +205,34 @@ Measured with `curl -w "%{time_total}s"` against 100,000 seeded events (store_al
 
 | Endpoint | Time | Why |
 |---|---|---|
-| `GET /analytics/overview` | **48ms** | Reads ~450 rows from store_daily_stats |
-| `GET /analytics/top-products` | **52ms** | Indexed scan, purchases only, last 30 days |
-| `GET /analytics/recent-activity` | **38ms** | LIMIT 20 on indexed timestamp |
+| `GET /api/v1/analytics/overview` | **126ms** | Reads ~450 rows from store_daily_stats |
+| `GET /api/v1/analytics/top-products` | **52ms** | Indexed scan, purchases only, last 30 days |
+| `GET /api/v1/analytics/recent-activity` | **38ms** | LIMIT 20 on indexed timestamp |
 
 All endpoints stay well under the 500ms constraint. The pre-aggregated stats approach guarantees this regardless of event volume.
 
 ---
 
-## Beyond the Requirements — MCP Server
+## Beyond the Requirements: MCP Server
 
-The assignment had a bonus list: live visitors, real-time updates, date range filtering, performance optimizations. I built all of those.
+The assignment had a bonus list: live visitors, real-time updates, date range filtering, performance optimizations. **I built all of those.
 
-I also added something not on the list: an MCP (Model Context Protocol) server at `/ai`.
+I also added something not on the list: an MCP (Model Context Protocol) server via stdio.
 
 Here's why I think it matters for Amboras specifically.
 
-Amboras is positioned as an AI-native platform — the idea is that AI does everything from store creation to marketing to analytics. If that's true, the dashboard can't be the only interface to store data. An AI agent shouldn't have to scrape a web page to answer "how are my top products trending this week?" It should be able to call a tool directly.
+Amboras is positioned as an AI-native platform. the idea is that AI does everything from store creation to marketing to analytics. If that's true, the dashboard can't be the only interface to store data. An AI agent shouldn't have to scrape a web page to answer "how are my top products trending this week?" It should be able to call a tool directly.
 
-MCP is the protocol that makes that possible. It exposes backend functionality as structured, AI-callable tools. I built four:
+MCP is the protocol that makes that possible. It exposes backend functionality as structured, AI-callable tools. I built several tools including:
 
-- `get_store_overview` — revenue, conversion rate, event counts for a date range
-- `get_top_products` — top 10 by revenue
-- `get_revenue_trend` — daily revenue array for trend analysis
-- `analyze_conversion_funnel` — page_view → cart → checkout → purchase drop-off rates with percentages
+- `get_overview` — fetches dashboard overview metrics for a single store
+- `get_top_products` — fetches top products for one store over an optional range
+- `get_recent_activity` — fetches the recent activity feed for one store
+- `get_live_visitors` — fetches live visitors snapshot in a rolling window
+- `get_dashboard_snapshot` — returns overview, top-products, recent-activity, and live-visitors in one call
+- `verify_store_isolation` — compares two stores for data isolation by checking product and event IDs
 
-The funnel analysis is new — it's not in the existing analytics endpoints. It answers a specific question store owners actually have: where am I losing people? The MCP tool returns structured drop-off data that an LLM can reason about and give concrete recommendations from.
+The tools map to the same endpoints used by the dashboard and securely scope requests using the storeId, allowing an LLM to reason about the data and give concrete recommendations without exposing data from other tenants.
 
 ### Running the MCP Server
 
@@ -241,7 +249,7 @@ The dashboard is the human interface. MCP is the machine interface. For an AI-na
 
 ## Known Limitations
 
-1. **Auth is simplified.** storeId alone mints a token — no passwords, no user table. Intentional for assignment scope. Production needs real credentials or OAuth.
+1. **Auth is simplified.** storeId alone mints a token: no passwords, no user table. Intentional for assignment scope. Production needs real credentials or OAuth.
 2. **No transaction between event write and stats write.** A crash between the two creates temporary inconsistency. Fix: wrap in a Prisma transaction, or use a transactional outbox pattern.
 3. **SSE doesn't scale horizontally.** In-process EventEmitter only fans out to clients on the same server instance. Fix: Redis pub/sub as the broker.
 4. **Top-products still queries raw events.** Fine up to ~10M rows with indexes. Beyond that: dedicated product aggregates or TimescaleDB continuous aggregates.
@@ -251,14 +259,14 @@ The dashboard is the human interface. MCP is the machine interface. For an AI-na
 
 ## What I'd Add With More Time
 
-- **TimescaleDB continuous aggregates** — replace the manual daily stats table with native time bucketing. More powerful, less operational burden.
-- **PostgreSQL Row Level Security** — database-level tenant isolation as a second enforcement layer.
-- **Redis pub/sub** — make SSE fan-out work across horizontally scaled API nodes.
-- **Transactional outbox** — guarantee consistency between events, stats, and real-time notifications.
-- **Richer MCP tools** — inventory alerts, customer segmentation, anomaly detection. The foundation is there.
+- **TimescaleDB continuous aggregates:**  replace the manual daily stats table with native time bucketing. More powerful, less operational burden.
+- **PostgreSQL Row Level Security:** database-level tenant isolation as a second enforcement layer.
+- **Redis pub/sub:** make SSE fan-out work across horizontally scaled API nodes.
+- **Transactional outbox:**  guarantee consistency between events, stats, and real-time notifications.
+- **Richer MCP tools:** inventory alerts, customer segmentation, anomaly detection. The foundation is there.
 
 ---
 
 ## Time Spent
 
-Approximately 5.5 hours — backend ~1.5h, seed script ~20min, frontend ~1h, design iteration ~30min, MCP server ~45min, README + documentation ~45min.
+Approximately 4 hours - backend ~1.5h, seed script ~10min, frontend ~1h, design iteration ~30min, MCP server ~30min, README + documentation ~30min.

@@ -130,7 +130,6 @@ export class AnalyticsController {
 
         void this.getLiveVisitorsSnapshot(req.user.storeId)
           .then((snapshot) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             observer.next({ data: snapshot });
           })
           .catch(() => {

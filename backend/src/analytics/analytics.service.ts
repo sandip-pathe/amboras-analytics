@@ -36,12 +36,17 @@ export type LiveVisitorsSummary = {
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private resolveRange(startDateRaw?: string, endDateRaw?: string): AnalyticsRange {
+  private resolveRange(
+    startDateRaw?: string,
+    endDateRaw?: string,
+  ): AnalyticsRange {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
     const parsedEnd = endDateRaw ? new Date(endDateRaw) : new Date(today);
-    const endDate = Number.isNaN(parsedEnd.getTime()) ? new Date(today) : parsedEnd;
+    const endDate = Number.isNaN(parsedEnd.getTime())
+      ? new Date(today)
+      : parsedEnd;
     endDate.setUTCHours(0, 0, 0, 0);
 
     const parsedStart = startDateRaw ? new Date(startDateRaw) : null;
@@ -82,7 +87,11 @@ export class AnalyticsService {
     };
   }
 
-  async getOverview(storeId: string, startDateRaw?: string, endDateRaw?: string) {
+  async getOverview(
+    storeId: string,
+    startDateRaw?: string,
+    endDateRaw?: string,
+  ) {
     const range = this.resolveRange(startDateRaw, endDateRaw);
 
     const weekStart = new Date(range.endDate);
@@ -307,7 +316,9 @@ export class AnalyticsService {
       checkoutsStarted: counts.checkout_started,
       purchases,
       purchaseRate:
-        pageViews === 0 ? 0 : Number(((purchases / pageViews) * 100).toFixed(2)),
+        pageViews === 0
+          ? 0
+          : Number(((purchases / pageViews) * 100).toFixed(2)),
       asOf: new Date().toISOString(),
     };
 

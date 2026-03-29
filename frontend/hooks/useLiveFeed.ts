@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 type ActivityEvent = {
   eventId: string;
@@ -24,44 +24,49 @@ export function useLiveFeed(
   const [liveEvents, setLiveEvents] = useState<ActivityEvent[]>([]);
   const [isConnected, setIsConnected] = useState(false);
 
-  const inRange = (timestamp: string) => {
-    if (!range?.startDate && !range?.endDate) {
+  const inRange = useCallback(
+    (timestamp: string) => {
+      if (!range?.startDate && !range?.endDate) {
+        return true;
+      }
+
+      const eventMs = new Date(timestamp).getTime();
+      if (Number.isNaN(eventMs)) {
+        return false;
+      }
+
+      if (range.startDate) {
+        const start = new Date(range.startDate);
+        start.setUTCHours(0, 0, 0, 0);
+        if (eventMs < start.getTime()) {
+          return false;
+        }
+      }
+
+      if (range.endDate) {
+        const end = new Date(range.endDate);
+        end.setUTCHours(23, 59, 59, 999);
+        if (eventMs > end.getTime()) {
+          return false;
+        }
+      }
+
       return true;
-    }
-
-    const eventMs = new Date(timestamp).getTime();
-    if (Number.isNaN(eventMs)) {
-      return false;
-    }
-
-    if (range.startDate) {
-      const start = new Date(range.startDate);
-      start.setUTCHours(0, 0, 0, 0);
-      if (eventMs < start.getTime()) {
-        return false;
-      }
-    }
-
-    if (range.endDate) {
-      const end = new Date(range.endDate);
-      end.setUTCHours(23, 59, 59, 999);
-      if (eventMs > end.getTime()) {
-        return false;
-      }
-    }
-
-    return true;
-  };
+    },
+    [range?.endDate, range?.startDate],
+  );
 
   useEffect(() => {
     // Clear buffered SSE events when the selected range changes so previous-range
     // events do not remain visible.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLiveEvents([]);
   }, [range?.endDate, range?.startDate]);
 
   useEffect(() => {
     const token = localStorage.getItem("amboras_token");
     if (!token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsConnected(false);
       return;
     }
@@ -137,9 +142,10 @@ export function useLiveFeed(
       isDisposed = true;
       clearReconnectTimer();
       source?.close();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setIsConnected(false);
     };
-  }, [range?.endDate, range?.startDate]);
+  }, [range?.endDate, range?.startDate, inRange]);
 
   const events = useMemo(() => {
     const combined = [...liveEvents, ...(initialEvents ?? [])];
@@ -162,7 +168,7 @@ export function useLiveFeed(
     }
 
     return deduped;
-  }, [initialEvents, liveEvents]);
+  }, [initialEvents, liveEvents, inRange]);
 
   return { events, isConnected };
 }

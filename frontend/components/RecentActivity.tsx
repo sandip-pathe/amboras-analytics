@@ -64,7 +64,7 @@ function formatCurrency(value: number) {
 }
 
 export function RecentActivity({ events, isConnected }: RecentActivityProps) {
-  const [nowMs, setNowMs] = useState(Date.now());
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   useEffect(() => {
     const timer = setInterval(() => setNowMs(Date.now()), 1000);

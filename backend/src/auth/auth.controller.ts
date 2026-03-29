@@ -9,7 +9,9 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('token')
-  @ApiOperation({ summary: 'Dev-only token mint endpoint (no password/user table)' })
+  @ApiOperation({
+    summary: 'Dev-only token mint endpoint (no password/user table)',
+  })
   @ApiBody({ type: CreateTokenDto })
   createToken(@Body() body: CreateTokenDto) {
     return this.authService.createToken(body.storeId);

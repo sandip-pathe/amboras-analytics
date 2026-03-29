@@ -24,8 +24,9 @@ import { JwtAuthGuard } from './jwt-auth.guard';
           secret: secret ?? 'dev-secret-change-in-production',
           signOptions: {
             expiresIn:
-              (configService.get<string>('JWT_EXPIRES_IN') as StringValue | undefined) ??
-              ('7d' as StringValue),
+              (configService.get<string>('JWT_EXPIRES_IN') as
+                | StringValue
+                | undefined) ?? ('7d' as StringValue),
           },
         };
       },

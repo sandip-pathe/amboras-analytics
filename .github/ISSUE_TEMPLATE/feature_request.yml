@@ -1,0 +1,37 @@
+name: Feature or connector request
+description: Suggest a product feature, integration, or connector.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user pain does this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: What should Amboras do?
+    validations:
+      required: true
+  - type: dropdown
+    id: segment
+    attributes:
+      label: Who needs this?
+      options:
+        - WooCommerce store owner
+        - Ecommerce agency
+        - Custom storefront team
+        - Marketplace team
+        - AI analytics workflow
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra context
+      description: Links, examples, screenshots, or implementation notes.

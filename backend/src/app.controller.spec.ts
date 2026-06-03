@@ -15,8 +15,24 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return API metadata', () => {
+      expect(appController.getRoot()).toEqual(
+        expect.objectContaining({
+          name: 'Amboras Analytics API',
+          status: 'ok',
+        }),
+      );
+    });
+  });
+
+  describe('health', () => {
+    it('should return a health snapshot', () => {
+      expect(appController.getHealth()).toEqual(
+        expect.objectContaining({
+          service: 'amboras-analytics-api',
+          status: 'ok',
+        }),
+      );
     });
   });
 });

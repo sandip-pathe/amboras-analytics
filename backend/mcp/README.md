@@ -32,4 +32,4 @@ Override with:
 
 - All tools require a `storeId` and are scoped per store.
 - Date-range params (`startDate`, `endDate`) are passed through to analytics endpoints.
-- `verify_store_isolation` compares two stores and reports overlapping IDs.
+- `verify_store_isolation` compares two stores and reports whether recent event IDs overlap. Shared product IDs are reported as catalog overlap, not as isolation failure.

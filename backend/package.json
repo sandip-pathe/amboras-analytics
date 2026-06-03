@@ -1,16 +1,18 @@
 {
   "name": "backend",
   "version": "0.0.1",
-  "description": "",
+  "description": "NestJS API for Amboras real-time ecommerce analytics.",
   "author": "",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
   },
   "scripts": {
     "build": "nest build",
+    "demo:live": "node scripts/live-demo.js",
     "mcp:start": "node mcp/server.mjs",
+    "scale:proof": "node scripts/scale-proof.js",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

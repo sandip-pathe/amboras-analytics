@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,7 +11,13 @@ export class EventsService {
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async ingestEvent(dto: CreateEventDto) {
+  async ingestEvent(authenticatedStoreId: string, dto: CreateEventDto) {
+    if (dto.store_id !== authenticatedStoreId) {
+      throw new ForbiddenException(
+        'Event store_id must match the authenticated store.',
+      );
+    }
+
     const statId = randomUUID();
     const normalizedDate = new Date(dto.timestamp);
     normalizedDate.setUTCHours(0, 0, 0, 0);
@@ -23,7 +29,7 @@ export class EventsService {
       await tx.event.create({
         data: {
           eventId: dto.event_id,
-          storeId: dto.store_id,
+          storeId: authenticatedStoreId,
           eventType: dto.event_type,
           timestamp: dto.timestamp,
           productId: dto.data?.product_id,
@@ -36,7 +42,7 @@ export class EventsService {
         INSERT INTO store_daily_stats (id, store_id, date, event_type, count, revenue)
         VALUES (
           ${statId},
-          ${dto.store_id},
+          ${authenticatedStoreId},
           ${normalizedDate},
           ${dto.event_type}::"EventType",
           1,
@@ -51,7 +57,7 @@ export class EventsService {
 
     this.eventEmitter.emit('event.ingested', {
       eventId: dto.event_id,
-      storeId: dto.store_id,
+      storeId: authenticatedStoreId,
       eventType: dto.event_type,
       timestamp: dto.timestamp,
       amount: dto.data?.amount ?? null,

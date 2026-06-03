@@ -21,12 +21,18 @@ export function useLiveFeed(
   initialEvents?: ActivityEvent[],
   range?: LiveFeedRange,
 ) {
-  const [liveEvents, setLiveEvents] = useState<ActivityEvent[]>([]);
+  const rangeStartDate = range?.startDate;
+  const rangeEndDate = range?.endDate;
+  const rangeKey = `${rangeStartDate ?? ""}:${rangeEndDate ?? ""}`;
+  const [liveEventsByRange, setLiveEventsByRange] = useState<{
+    rangeKey: string;
+    events: ActivityEvent[];
+  }>({ rangeKey, events: [] });
   const [isConnected, setIsConnected] = useState(false);
 
   const inRange = useCallback(
     (timestamp: string) => {
-      if (!range?.startDate && !range?.endDate) {
+      if (!rangeStartDate && !rangeEndDate) {
         return true;
       }
 
@@ -35,16 +41,16 @@ export function useLiveFeed(
         return false;
       }
 
-      if (range.startDate) {
-        const start = new Date(range.startDate);
+      if (rangeStartDate) {
+        const start = new Date(rangeStartDate);
         start.setUTCHours(0, 0, 0, 0);
         if (eventMs < start.getTime()) {
           return false;
         }
       }
 
-      if (range.endDate) {
-        const end = new Date(range.endDate);
+      if (rangeEndDate) {
+        const end = new Date(rangeEndDate);
         end.setUTCHours(23, 59, 59, 999);
         if (eventMs > end.getTime()) {
           return false;
@@ -53,21 +59,18 @@ export function useLiveFeed(
 
       return true;
     },
-    [range?.endDate, range?.startDate],
+    [rangeEndDate, rangeStartDate],
   );
 
-  useEffect(() => {
-    // Clear buffered SSE events when the selected range changes so previous-range
-    // events do not remain visible.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLiveEvents([]);
-  }, [range?.endDate, range?.startDate]);
+  const liveEvents = useMemo(
+    () =>
+      liveEventsByRange.rangeKey === rangeKey ? liveEventsByRange.events : [],
+    [liveEventsByRange, rangeKey],
+  );
 
   useEffect(() => {
     const token = localStorage.getItem("amboras_token");
     if (!token) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsConnected(false);
       return;
     }
 
@@ -122,7 +125,13 @@ export function useLiveFeed(
           if (!inRange(parsed.timestamp)) {
             return;
           }
-          setLiveEvents((prev) => [parsed, ...prev].slice(0, 20));
+          setLiveEventsByRange((prev) => {
+            const currentEvents = prev.rangeKey === rangeKey ? prev.events : [];
+            return {
+              rangeKey,
+              events: [parsed, ...currentEvents].slice(0, 20),
+            };
+          });
         } catch {
           // Ignore malformed events but keep stream alive.
         }
@@ -142,10 +151,9 @@ export function useLiveFeed(
       isDisposed = true;
       clearReconnectTimer();
       source?.close();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
       setIsConnected(false);
     };
-  }, [range?.endDate, range?.startDate, inRange]);
+  }, [inRange, rangeKey]);
 
   const events = useMemo(() => {
     const combined = [...liveEvents, ...(initialEvents ?? [])];

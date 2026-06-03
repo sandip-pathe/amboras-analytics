@@ -214,7 +214,7 @@ server.tool(
 
 server.tool(
   "verify_store_isolation",
-  "Compares two stores for data isolation by checking top product IDs and recent event IDs do not overlap in responses.",
+  "Compares two stores for data isolation by checking recent event IDs do not overlap in responses.",
   {
     primaryStoreId: z.string().min(2).max(64),
     comparisonStoreId: z.string().min(2).max(64),
@@ -251,7 +251,7 @@ server.tool(
       (comparisonRecent.events ?? []).map((e) => e.eventId),
     );
 
-    const overlappingProductIds = [...primaryProductIds].filter((id) =>
+    const sharedProductCatalogIds = [...primaryProductIds].filter((id) =>
       comparisonProductIds.has(id),
     );
     const overlappingEventIds = [...primaryEventIds].filter((id) =>
@@ -261,12 +261,15 @@ server.tool(
     return asTextContent({
       primaryStoreId,
       comparisonStoreId,
-      overlap: {
-        overlappingProductIds,
+      catalog: {
+        sharedProductCatalogIds,
+        note:
+          "Shared product IDs are not treated as a data leak because stores can sell the same catalog IDs in demo or marketplace data.",
+      },
+      isolationEvidence: {
         overlappingEventIds,
       },
-      isolated:
-        overlappingProductIds.length === 0 && overlappingEventIds.length === 0,
+      isolated: overlappingEventIds.length === 0,
     });
   },
 );

@@ -41,8 +41,8 @@ I am not selling anything right now. I am trying to learn whether this would be 
 ```text
 Thanks. Here is the repo/demo:
 
-Repo: <github-url>
-Demo: <demo-url>
+Repo: https://github.com/sandip-pathe/Cartograph
+Demo: <hosted-demo-url when available>
 
 The main thing I am testing:
 Would a lightweight, self-hostable live analytics layer be useful for client stores, or is this already covered well enough by existing tools?
@@ -122,6 +122,6 @@ It includes:
 
 I am using it as proof-of-work and testing whether this could be useful for WooCommerce/custom storefront agencies.
 
-Repo: <github-url>
-Demo: <demo-url>
+Repo: https://github.com/sandip-pathe/Cartograph
+Demo: <hosted-demo-url when available>
 ```

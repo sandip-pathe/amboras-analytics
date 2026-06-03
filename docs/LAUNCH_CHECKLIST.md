@@ -39,6 +39,10 @@ Use this after the repo is pushed and ready to turn into a public proof-of-work 
 
 ## Outreach
 
+- [ ] Open `docs/COMMUNITY_LAUNCH_KIT.md`.
+- [ ] Add GitHub repo description and topics.
+- [ ] Pin Cartograph on the GitHub profile.
+- [ ] Post one public feedback request.
 - [ ] Prepare a list of 30 feedback targets.
 - [ ] Send the first 10 feedback messages.
 - [ ] Track replies in a simple sheet.

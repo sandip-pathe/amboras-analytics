@@ -7,7 +7,7 @@ export class AppService {
       name: 'Cartograph API',
       version: '1.0.0',
       status: 'ok',
-      docs: 'https://github.com/sandip-pathe/amboras-analytics',
+      docs: 'https://github.com/sandip-pathe/Cartograph',
     };
   }
 

@@ -17,9 +17,14 @@ All notable changes to Cartograph are documented here.
 - Backend scale proof shortcut via `npm run scale:proof`.
 - Tenant isolation unit tests for event ingestion.
 - GitHub issue templates, pull request template, and CI workflow.
+- Cartograph connector API for browser tracking, WooCommerce order webhooks, and Shopify order webhooks.
+- Store Signals API and dashboard panel for merchant-friendly alerts.
+- Technical deep dive, integration guide, and community launch kit.
 
 ### Changed
 
+- Renamed the product from the original spike branding to Cartograph.
+- Updated repo links to `sandip-pathe/Cartograph`.
 - Replaced earlier project docs with product and proof-of-work docs.
 - Made React Query DevTools development-only.
 - Removed Google font build-time dependency for offline-safe frontend builds.
@@ -34,3 +39,4 @@ All notable changes to Cartograph are documented here.
 - Event ingestion now rejects writes where the request body `store_id` differs from the authenticated store.
 - Frontend live feed range buffering no longer relies on stale eslint disables.
 - `frontend/.env.example` is no longer hidden by `frontend/.gitignore`.
+- Duplicate webhook event IDs are handled as idempotent skips instead of double-counting revenue.

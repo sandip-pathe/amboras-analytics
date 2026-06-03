@@ -201,6 +201,7 @@ Available tools:
 - `get_top_products`
 - `get_recent_activity`
 - `get_live_visitors`
+- `get_alerts`
 - `get_dashboard_snapshot`
 - `verify_store_isolation`
 
@@ -230,11 +231,14 @@ The repo includes practical launch docs:
 
 - [Final project plan](docs/FINAL_PROJECT_PLAN.md)
 - [Market scout](docs/MARKET_SCOUT.md)
+- [Technical deep dive](docs/TECHNICAL_DEEP_DIVE.md)
+- [Integration guide](docs/INTEGRATION_GUIDE.md)
 - [Deployment guide](docs/DEPLOYMENT.md)
 - [Demo runbook](docs/DEMO_RUNBOOK.md)
 - [Architecture notes](docs/ARCHITECTURE.md)
 - [Connector roadmap](docs/CONNECTOR_ROADMAP.md)
 - [Launch checklist](docs/LAUNCH_CHECKLIST.md)
+- [Community launch kit](docs/COMMUNITY_LAUNCH_KIT.md)
 - [Outreach kit](docs/OUTREACH.md)
 - [Proof-of-work checklist](docs/PROOF_OF_WORK.md)
 

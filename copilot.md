@@ -1,7 +1,7 @@
-# Amboras Analytics — Copilot Vibe Coding Instructions
+# Cartograph - Copilot Vibe Coding Instructions
 
 ## Project Overview
-Amboras Analytics is a real-time, multi-tenant eCommerce analytics dashboard. 
+Cartograph is a real-time, multi-tenant eCommerce analytics dashboard.
 The core architectural principle is **write-time aggregation**. We push heavy lifting to the ingestion phase to keep read queries blazing fast (<50ms).
 
 ## Tech Stack

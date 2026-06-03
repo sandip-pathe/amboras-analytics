@@ -1,11 +1,12 @@
-# Amboras Frontend
+# Cartograph Frontend
 
-Next.js dashboard for Amboras real-time ecommerce analytics.
+Next.js dashboard for Cartograph real-time ecommerce analytics.
 
 ## Responsibilities
 
 - Demo login for store-scoped JWTs.
 - Merchant-friendly dashboard for revenue, conversion, top products, and live activity.
+- Store Signals panel for live sales, checkout stalls, revenue drops, and product movement.
 - React Query snapshot fetching for aggregate data.
 - EventSource live feed for real-time activity updates.
 
@@ -31,6 +32,7 @@ Frontend URL: `http://localhost:3000`
 - `lib/api.ts`: typed API wrapper.
 - `hooks/useAnalytics.ts`: React Query analytics fetches.
 - `hooks/useLiveFeed.ts`: SSE connection and feed merge logic.
+- `components/AlertsPanel.tsx`: merchant-friendly operational signals.
 - `components/`: cards, charts, tables, and live activity UI.
 
 ## Production Notes

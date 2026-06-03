@@ -18,7 +18,7 @@ describe('AppController', () => {
     it('should return API metadata', () => {
       expect(appController.getRoot()).toEqual(
         expect.objectContaining({
-          name: 'Amboras Analytics API',
+          name: 'Cartograph API',
           status: 'ok',
         }),
       );
@@ -29,7 +29,7 @@ describe('AppController', () => {
     it('should return a health snapshot', () => {
       expect(appController.getHealth()).toEqual(
         expect.objectContaining({
-          service: 'amboras-analytics-api',
+          service: 'cartograph-api',
           status: 'ok',
         }),
       );

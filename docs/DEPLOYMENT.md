@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide prepares Amboras for a hosted proof-of-concept. It assumes a simple split deployment:
+This guide prepares Cartograph for a hosted proof-of-concept. It assumes a simple split deployment:
 
 - Frontend: Vercel
 - Backend: Render or Railway
@@ -62,8 +62,10 @@ Environment variables:
 ```env
 DATABASE_URL="postgresql://..."
 JWT_SECRET="replace-with-a-long-random-secret"
+CONNECTOR_INGEST_SECRET="replace-with-a-long-random-secret"
+PUBLIC_API_URL="https://your-backend-domain"
 PORT=3001
-CORS_ORIGINS="https://your-frontend-domain.vercel.app"
+CORS_ORIGINS="https://your-frontend-domain.vercel.app,https://your-storefront-domain.com"
 ```
 
 After deploy, confirm:
@@ -132,7 +134,7 @@ curl -X POST "https://your-backend-domain/api/v1/events" \
 
 Expected:
 
-- response is `{"success":true}`
+- response includes `{"success":true,"created":true}`
 - live feed shows the event without refresh
 - revenue aggregates update after React Query refetch or manual refresh
 
@@ -142,7 +144,39 @@ You can also use the scripted replay from `backend`:
 API_URL=https://your-backend-domain STORE_ID=store_alpha npm run demo:live
 ```
 
-## 5. Docker Local PoC
+## 5. Smoke Test A Connector
+
+Mint a scoped connector key:
+
+```bash
+CONNECTOR=$(curl -s "https://your-backend-domain/api/v1/connectors/ingest-key" \
+  -H "Authorization: Bearer $TOKEN")
+INGEST_KEY=$(node -e "const data = JSON.parse(process.argv[1]); console.log(data.ingest_key)" "$CONNECTOR")
+```
+
+Send a browser-style event:
+
+```bash
+curl -X POST "https://your-backend-domain/api/v1/connectors/track" \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"store_id\": \"store_alpha\",
+    \"ingest_key\": \"$INGEST_KEY\",
+    \"event_type\": \"add_to_cart\",
+    \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+    \"data\": {
+      \"product_id\": \"prod_012\"
+    }
+  }"
+```
+
+Expected:
+
+- response includes `{"success":true}`
+- dashboard recent activity shows the event
+- `GET /api/v1/analytics/alerts` returns a valid response
+
+## 6. Docker Local PoC
 
 From the repo root:
 
@@ -163,21 +197,22 @@ cd backend
 npx prisma db seed
 ```
 
-## 6. Production Caveats
+## 7. Production Caveats
 
 This hosted PoC is for demos.
 
 Before accepting real merchant data:
 
 - replace demo auth with real users
-- add scoped ingest keys
+- store hashed, revocable scoped ingest keys
+- add rate limiting to connector ingestion
+- verify WooCommerce and Shopify native webhook signatures
 - avoid long-lived JWTs in SSE URLs
 - add PostgreSQL Row Level Security
 - add Redis Pub/Sub for multi-instance live streams
 - add privacy and data retention policies
-- add rate limiting to event ingestion
 
-## 7. Public Demo Checklist
+## 8. Public Demo Checklist
 
 - Root README includes demo URL.
 - Backend CORS allows frontend domain.

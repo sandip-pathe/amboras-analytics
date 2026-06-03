@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for taking a look at Amboras Analytics.
+Thanks for taking a look at Cartograph.
 
 This project is currently a proof-of-work and early product exploration repo. Contributions are welcome, especially around ecommerce connectors, deployment docs, tests, and production hardening.
 

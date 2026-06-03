@@ -1,4 +1,4 @@
-# Amboras MCP Server
+# Cartograph MCP Server
 
 This MCP server exposes store-scoped analytics tools over stdio.
 
@@ -25,6 +25,7 @@ Override with:
 - `get_top_products`
 - `get_recent_activity`
 - `get_live_visitors`
+- `get_alerts`
 - `get_dashboard_snapshot`
 - `verify_store_isolation`
 

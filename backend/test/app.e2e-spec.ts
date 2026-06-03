@@ -29,7 +29,7 @@ describe('AppController (e2e)', () => {
       .expect((response) => {
         expect(response.body).toEqual(
           expect.objectContaining({
-            name: 'Amboras Analytics API',
+            name: 'Cartograph API',
             status: 'ok',
           }),
         );
@@ -43,7 +43,7 @@ describe('AppController (e2e)', () => {
       .expect((response) => {
         expect(response.body).toEqual(
           expect.objectContaining({
-            service: 'amboras-analytics-api',
+            service: 'cartograph-api',
             status: 'ok',
           }),
         );

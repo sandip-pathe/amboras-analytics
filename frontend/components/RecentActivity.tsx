@@ -106,7 +106,7 @@ export function RecentActivity({ events, isConnected }: RecentActivityProps) {
                       {humanizeEventType(event.eventType)}
                     </p>
                     <p className="truncate text-xs text-[#888880]">
-                      {event.productId ? `Product ${event.productId} • ` : ""}
+                      {event.productId ? `Product ${event.productId} - ` : ""}
                       {formatRelativeTime(event.timestamp, nowMs)}
                     </p>
                   </div>

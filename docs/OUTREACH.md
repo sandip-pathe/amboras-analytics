@@ -31,6 +31,8 @@ Hey, I built an open-source real-time ecommerce analytics starter.
 
 It ingests store events, pre-aggregates revenue/conversion data for fast dashboards, and shows live store activity without relying on GA4.
 
+It now includes a browser tracking snippet plus WooCommerce/Shopify order webhook adapters, so I am testing whether the connector path feels useful enough for agencies or custom storefronts.
+
 I am not selling anything right now. I am trying to learn whether this would be useful for WooCommerce/custom storefront projects. Could I send you the demo and get blunt feedback?
 ```
 
@@ -53,7 +55,7 @@ Any sharp criticism is welcome.
 ```text
 Hey, I noticed you build ecommerce sites for clients.
 
-I am working on an open-source analytics starter for agencies: event ingestion, fast aggregate dashboards, live activity, and a path toward WooCommerce/custom storefront connectors.
+I am working on an open-source analytics starter for agencies: event ingestion, fast aggregate dashboards, live activity, Store Signals, and simple WooCommerce/custom storefront connectors.
 
 I am trying to understand if agencies ever need this kind of dashboard as a reusable client deliverable. Could I send a 2-minute demo and ask what is missing?
 ```
@@ -104,7 +106,7 @@ Success for first round:
 ## Public Post Draft
 
 ```text
-I built Amboras Analytics, an open-source real-time ecommerce analytics starter.
+I built Cartograph, an open-source real-time ecommerce analytics starter.
 
 The core idea:
 Raw events are stored as history, but dashboard metrics read from pre-aggregated daily stats, so the overview stays fast even as event volume grows.
@@ -114,6 +116,8 @@ It includes:
 - Next.js merchant dashboard
 - Server-Sent Events live feed
 - store-scoped analytics
+- browser snippet plus WooCommerce/Shopify order webhook adapters
+- merchant-friendly Store Signals
 - MCP tools for AI-readable business data
 
 I am using it as proof-of-work and testing whether this could be useful for WooCommerce/custom storefront agencies.

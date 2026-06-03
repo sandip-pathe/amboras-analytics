@@ -94,6 +94,11 @@ export class AnalyticsController {
     return this.getLiveVisitorsSnapshot(req.user.storeId, parsedWindow);
   }
 
+  @Get('alerts')
+  getAlerts(@Req() req: AuthenticatedRequest) {
+    return this.analyticsService.getAlerts(req.user.storeId);
+  }
+
   @Sse('live')
   liveEvents(@Req() req: AuthenticatedRequest): Observable<MessageEvent> {
     return new Observable((observer) => {

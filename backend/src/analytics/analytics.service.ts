@@ -32,6 +32,30 @@ export type LiveVisitorsSummary = {
   asOf: string;
 };
 
+export type StoreAlertSeverity = 'critical' | 'warning' | 'info' | 'success';
+
+export type StoreAlert = {
+  id: string;
+  severity: StoreAlertSeverity;
+  title: string;
+  message: string;
+  metricLabel: string;
+  metricValue: string;
+  createdAt: string;
+};
+
+export type StoreAlertsResponse = {
+  generatedAt: string;
+  windowMinutes: number;
+  alerts: StoreAlert[];
+};
+
+type TopProductSignal = {
+  productId: string;
+  revenue: number;
+  orders: number;
+};
+
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -323,5 +347,213 @@ export class AnalyticsService {
     };
 
     return summary;
+  }
+
+  async getAlerts(storeId: string): Promise<StoreAlertsResponse> {
+    const now = new Date();
+    const generatedAt = now.toISOString();
+    const windowMinutes = 30;
+    const recentStart = new Date(now.getTime() - windowMinutes * 60 * 1000);
+    const liveSaleStart = new Date(now.getTime() - 15 * 60 * 1000);
+
+    const today = new Date(now);
+    today.setUTCHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+
+    const [
+      recentRows,
+      revenueRows,
+      recentPurchase,
+      todayTopProduct,
+      yesterdayTopProduct,
+    ] = await Promise.all([
+      this.prisma.$queryRaw<
+        Array<{ event_type: string; event_count: unknown }>
+      >`
+        SELECT event_type::text AS event_type, COUNT(*)::bigint AS event_count
+        FROM events
+        WHERE store_id = ${storeId}
+          AND timestamp >= ${recentStart}
+        GROUP BY event_type
+      `,
+      this.prisma.storeDailyStat.findMany({
+        where: {
+          storeId,
+          eventType: 'purchase',
+          date: {
+            in: [today, yesterday],
+          },
+        },
+        select: {
+          date: true,
+          count: true,
+          revenue: true,
+        },
+      }),
+      this.prisma.event.findFirst({
+        where: {
+          storeId,
+          eventType: 'purchase',
+          timestamp: {
+            gte: liveSaleStart,
+          },
+        },
+        orderBy: { timestamp: 'desc' },
+        select: {
+          timestamp: true,
+          productId: true,
+          amount: true,
+          currency: true,
+        },
+      }),
+      this.getTopProductForDay(storeId, today),
+      this.getTopProductForDay(storeId, yesterday),
+    ]);
+
+    const counts = this.emptyEventCounts();
+    for (const row of recentRows) {
+      const key = row.event_type as keyof EventsByType;
+      if (key in counts) {
+        counts[key] = Number(row.event_count ?? 0);
+      }
+    }
+
+    const revenueByDay = new Map<string, number>();
+    for (const row of revenueRows) {
+      revenueByDay.set(row.date.toISOString().slice(0, 10), Number(row.revenue));
+    }
+
+    const todayRevenue = revenueByDay.get(today.toISOString().slice(0, 10)) ?? 0;
+    const yesterdayRevenue =
+      revenueByDay.get(yesterday.toISOString().slice(0, 10)) ?? 0;
+
+    const alerts: StoreAlert[] = [];
+
+    if (counts.page_view >= 15 && counts.add_to_cart === 0) {
+      alerts.push({
+        id: 'high_visitors_zero_carts',
+        severity: 'warning',
+        title: 'High visitors, zero carts',
+        message: `${counts.page_view} visitors landed in the last ${windowMinutes} minutes, but nobody added an item to cart.`,
+        metricLabel: 'Visitors',
+        metricValue: String(counts.page_view),
+        createdAt: generatedAt,
+      });
+    }
+
+    if (counts.checkout_started > 0 && counts.purchase === 0) {
+      alerts.push({
+        id: 'checkout_started_no_purchases',
+        severity: 'critical',
+        title: 'Checkout started, no purchases',
+        message: `${counts.checkout_started} checkout starts have not turned into a purchase in the last ${windowMinutes} minutes.`,
+        metricLabel: 'Checkout starts',
+        metricValue: String(counts.checkout_started),
+        createdAt: generatedAt,
+      });
+    }
+
+    if (yesterdayRevenue >= 50 && todayRevenue < yesterdayRevenue * 0.5) {
+      alerts.push({
+        id: 'revenue_dropped_vs_yesterday',
+        severity: 'warning',
+        title: 'Revenue dropped vs yesterday',
+        message: `Today is at ${this.formatMoney(todayRevenue)} after ${this.formatMoney(yesterdayRevenue)} yesterday.`,
+        metricLabel: 'Today',
+        metricValue: this.formatMoney(todayRevenue),
+        createdAt: generatedAt,
+      });
+    }
+
+    if (
+      todayTopProduct &&
+      yesterdayTopProduct &&
+      todayTopProduct.productId !== yesterdayTopProduct.productId
+    ) {
+      alerts.push({
+        id: 'top_product_changed_today',
+        severity: 'info',
+        title: 'Top product changed today',
+        message: `Product ${todayTopProduct.productId} is leading today after product ${yesterdayTopProduct.productId} led yesterday.`,
+        metricLabel: 'Today revenue',
+        metricValue: this.formatMoney(todayTopProduct.revenue),
+        createdAt: generatedAt,
+      });
+    }
+
+    if (recentPurchase) {
+      alerts.push({
+        id: 'live_sale_happened',
+        severity: 'success',
+        title: 'Live sale happened',
+        message: `Latest sale was ${this.formatMoney(
+          Number(recentPurchase.amount ?? 0),
+          recentPurchase.currency ?? 'USD',
+        )}${recentPurchase.productId ? ` for product ${recentPurchase.productId}` : ''}.`,
+        metricLabel: 'Sale time',
+        metricValue: recentPurchase.timestamp.toISOString(),
+        createdAt: generatedAt,
+      });
+    }
+
+    return {
+      generatedAt,
+      windowMinutes,
+      alerts,
+    };
+  }
+
+  private async getTopProductForDay(
+    storeId: string,
+    date: Date,
+  ): Promise<TopProductSignal | null> {
+    const endExclusiveTimestamp = new Date(date);
+    endExclusiveTimestamp.setUTCDate(endExclusiveTimestamp.getUTCDate() + 1);
+
+    const rows = await this.prisma.$queryRaw<
+      Array<{ product_id: string; revenue: unknown; orders: unknown }>
+    >`
+      SELECT product_id, COALESCE(SUM(amount), 0) AS revenue, COUNT(*) AS orders
+      FROM events
+      WHERE store_id = ${storeId}
+        AND event_type = 'purchase'
+        AND timestamp >= ${date}
+        AND timestamp < ${endExclusiveTimestamp}
+        AND product_id IS NOT NULL
+      GROUP BY product_id
+      ORDER BY revenue DESC
+      LIMIT 1
+    `;
+
+    const [topProduct] = rows;
+    if (!topProduct) {
+      return null;
+    }
+
+    return {
+      productId: topProduct.product_id,
+      revenue: Number(topProduct.revenue ?? 0),
+      orders: Number(topProduct.orders ?? 0),
+    };
+  }
+
+  private emptyEventCounts(): EventsByType {
+    return {
+      page_view: 0,
+      add_to_cart: 0,
+      remove_from_cart: 0,
+      checkout_started: 0,
+      purchase: 0,
+    };
+  }
+
+  private formatMoney(value: number, currency = 'USD') {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2,
+    }).format(value);
   }
 }

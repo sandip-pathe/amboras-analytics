@@ -1,6 +1,6 @@
 # Security Policy
 
-Amboras Analytics is currently a proof-of-work project and hosted-demo candidate. Do not use it for real merchant data without production hardening.
+Cartograph is currently a proof-of-work project and hosted-demo candidate. Do not use it for real merchant data without production hardening.
 
 ## Supported Versions
 

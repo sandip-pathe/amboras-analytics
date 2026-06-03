@@ -1,8 +1,8 @@
-# Amboras Analytics
+# Cartograph
 
 Open-source real-time ecommerce analytics for custom storefronts, WooCommerce-style stores, and small teams that need a fast live view without living inside GA4.
 
-Amboras ingests store events, writes raw history, maintains daily aggregate stats, and renders a merchant-friendly dashboard with revenue, conversion, top products, and live activity. It is built as a proof-of-work project, but the architecture is intentionally close to a real product.
+Cartograph ingests store events, writes raw history, maintains daily aggregate stats, and renders a merchant-friendly dashboard with revenue, conversion, top products, and live activity. It is built as a proof-of-work project, but the architecture is intentionally close to a real product.
 
 [Video walkthrough](https://youtu.be/ZPBcP68M4h8)
 
@@ -17,15 +17,20 @@ Common pain:
 - WooCommerce reporting can become slow when reports run against the live WordPress database.
 - Agencies and custom storefront builders keep rebuilding the same analytics layer for clients.
 
-Amboras focuses on a narrower wedge: a self-hostable, developer-friendly live store pulse that stays fast as event volume grows.
+Cartograph focuses on a narrower wedge: a self-hostable, developer-friendly live store pulse that stays fast as event volume grows.
 
 ## Current Product
 
 - Store-scoped login with JWT demo auth.
 - Event ingestion for `page_view`, `add_to_cart`, `remove_from_cart`, `checkout_started`, and `purchase`.
+- Store-scoped connector ingest keys for browser snippets and ecommerce webhooks.
+- Public JS tracking snippet for custom storefronts.
+- WooCommerce order webhook adapter.
+- Shopify order webhook adapter.
 - Raw `events` table for source-of-truth history.
 - Write-time daily aggregation into `store_daily_stats`.
 - Dashboard cards for today's revenue, week/month revenue, conversion, and live visitors.
+- Merchant-friendly Store Signals for live sales, checkout stalls, revenue drops, and product movement.
 - Revenue, event-type, top-product, and recent-activity views.
 - Server-Sent Events live feed.
 - MCP server exposing analytics as AI-callable tools.
@@ -35,13 +40,18 @@ Amboras focuses on a narrower wedge: a self-hostable, developer-friendly live st
 
 ```mermaid
 flowchart LR
-  Storefront["Storefront or webhook"] --> API["NestJS Events API"]
+  Storefront["Storefront JS snippet"] --> Connectors["Connector API"]
+  Woo["WooCommerce webhook"] --> Connectors
+  Shopify["Shopify webhook"] --> Connectors
+  Connectors --> API["NestJS Events API"]
   API --> Raw["events table"]
   API --> Stats["store_daily_stats"]
   API --> Bus["EventEmitter"]
   Stats --> Analytics["Analytics API"]
   Raw --> Analytics
+  Analytics --> Alerts["Store Signals"]
   Analytics --> Dashboard["Next.js dashboard"]
+  Alerts --> Dashboard
   Bus --> SSE["SSE live stream"]
   SSE --> Dashboard
   Analytics --> MCP["MCP tools"]
@@ -132,7 +142,49 @@ Analytics endpoints:
 - `GET /api/v1/analytics/top-products`
 - `GET /api/v1/analytics/recent-activity`
 - `GET /api/v1/analytics/live-visitors`
+- `GET /api/v1/analytics/alerts`
 - `GET /api/v1/analytics/live?token=...`
+
+## Connectors
+
+Mint a scoped ingest key for the authenticated store:
+
+```bash
+curl "http://localhost:3001/api/v1/connectors/ingest-key" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+Custom storefronts can use the returned script tag, or post directly:
+
+```bash
+curl -X POST "http://localhost:3001/api/v1/connectors/track" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "store_id": "store_alpha",
+    "ingest_key": "YOUR_SCOPED_INGEST_KEY",
+    "event_type": "add_to_cart",
+    "timestamp": "2026-03-28T13:00:00Z",
+    "data": {
+      "product_id": "prod_012"
+    }
+  }'
+```
+
+WooCommerce and Shopify order webhooks post to:
+
+- `POST /api/v1/connectors/woocommerce/orders`
+- `POST /api/v1/connectors/shopify/orders`
+
+Include these headers:
+
+```text
+x-cartograph-store-id: store_alpha
+x-cartograph-ingest-key: YOUR_SCOPED_INGEST_KEY
+```
+
+WooCommerce `processing` and `completed` orders map to purchase events. Shopify `paid`, `partially_paid`, and `partially_refunded` orders map to purchase events. Pending/authorized order states map to checkout-started events.
+
+For browser snippet installs, include the storefront origin in `CORS_ORIGINS`, for example `https://your-dashboard.vercel.app,https://your-store.com`.
 
 ## MCP Tools
 
@@ -200,13 +252,13 @@ The repo includes practical launch docs:
 - Live visitors are estimated from recent page views until session/user identifiers are added.
 - SSE uses an in-process event bus. Multi-instance production deployments should use Redis Pub/Sub or a broker.
 - Tenant isolation is enforced in application code. PostgreSQL Row Level Security would make this stronger.
-- No first-party Shopify or WooCommerce connector is implemented yet.
+- Connector ingest keys are deterministic HMAC keys for the proof-of-concept. Production should store hashed, revocable keys.
 
 ## Roadmap
 
-1. Add a WooCommerce REST/webhook connector.
-2. Add a public storefront tracking snippet with scoped ingest keys.
-3. Add alert rules such as "checkout started but no purchases."
+1. Add hashed, revocable connector keys and rate limiting.
+2. Add packaged WooCommerce and Shopify install helpers.
+3. Add session/customer identifiers for stronger live visitor counts.
 4. Add PostgreSQL RLS and short-lived SSE stream tokens.
 5. Host a public demo and collect feedback from ecommerce agencies.
 

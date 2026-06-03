@@ -7,7 +7,7 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("amboras_token");
+    const token = localStorage.getItem("cartograph_token");
     if (token) {
       router.replace("/dashboard");
       return;

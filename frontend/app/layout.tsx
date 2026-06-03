@@ -3,8 +3,8 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "Amboras Analytics",
-  description: "Real-time store analytics dashboard",
+  title: "Cartograph",
+  description: "Real-time ecommerce analytics for live store operators",
 };
 
 export default function RootLayout({

@@ -1,139 +1,153 @@
-# Connector Roadmap
+# Connector Guide
 
-The current app proves the analytics engine. To put it in market, Amboras needs a way to receive real store data with minimal setup.
+Cartograph now includes three simple ingestion paths:
 
-## Recommended First Connector: WooCommerce
+- a public tracking snippet for custom storefronts
+- a WooCommerce order webhook adapter
+- a Shopify order webhook adapter
 
-WooCommerce is the best first wedge because:
+Each connector writes through the same event service as the authenticated API, so raw events, daily aggregates, SSE updates, recent activity, top products, and Store Signals all stay consistent.
 
-- agencies and freelancers are reachable
-- reporting speed is a known pain
-- stores often have custom plugins and workflows
-- a lightweight analytics layer is easier to justify than a full attribution suite
+## Scoped Ingest Keys
 
-## Version 1 Connector Scope
+Authenticated dashboard users can request connector settings:
 
-### Required
+```bash
+curl "http://localhost:3001/api/v1/connectors/ingest-key" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
 
-- Store owner creates an Amboras store.
-- Amboras issues a scoped ingest key.
-- WooCommerce plugin stores the key.
-- Plugin sends purchase events when an order is created.
-- Optional historical sync imports recent orders.
-
-### Event Mapping
-
-| WooCommerce Signal | Amboras Event |
-| --- | --- |
-| Product page viewed | `page_view` |
-| Add to cart | `add_to_cart` |
-| Remove from cart | `remove_from_cart` |
-| Checkout page opened | `checkout_started` |
-| Order created / paid | `purchase` |
-
-### Purchase Event Shape
+Response shape:
 
 ```json
 {
-  "event_id": "woo_order_12345",
   "store_id": "store_alpha",
-  "event_type": "purchase",
-  "timestamp": "2026-06-02T12:00:00Z",
-  "data": {
-    "product_id": "prod_012",
-    "amount": 249.99,
-    "currency": "USD"
+  "ingest_key": "cg_...",
+  "tracking_snippet": "<script async src=\"...\"></script>",
+  "endpoints": {
+    "track": "http://localhost:3001/api/v1/connectors/track",
+    "woocommerce_orders": "http://localhost:3001/api/v1/connectors/woocommerce/orders",
+    "shopify_orders": "http://localhost:3001/api/v1/connectors/shopify/orders"
+  },
+  "headers": {
+    "x-cartograph-store-id": "store_alpha",
+    "x-cartograph-ingest-key": "cg_..."
   }
 }
 ```
 
-If one order has multiple products, start simple:
+For the proof-of-concept, keys are deterministic HMAC values derived from `CONNECTOR_INGEST_SECRET` and the store ID. This keeps setup simple while still preventing one store key from writing to another store. A production version should store hashed keys with names, last-used timestamps, revocation, and rate limits.
 
-- emit one purchase event for the order total
-- set `product_id` to the highest-value line item
+## Custom Storefront Snippet
 
-Later:
+Install the returned script tag on a storefront page:
 
-- add order ID
-- add line-item table
-- support multiple product rows per purchase
+```html
+<script
+  async
+  src="https://your-backend-domain/api/v1/connectors/snippet.js?store_id=store_alpha&ingest_key=cg_..."
+></script>
+```
 
-## Custom Storefront Connector
+The snippet sends a `page_view` event on load and exposes:
 
-For headless/custom stores, ship a small server-side helper first.
-
-Example:
-
-```ts
-await fetch("https://amboras.example.com/api/v1/events", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": "Bearer STORE_INGEST_TOKEN"
-  },
-  body: JSON.stringify({
-    event_id: "evt_123",
-    store_id: "store_alpha",
-    event_type: "purchase",
-    timestamp: new Date().toISOString(),
-    data: {
-      product_id: "prod_012",
-      amount: 249.99,
-      currency: "USD"
-    }
-  })
+```js
+window.Cartograph.track("page_view", {});
+window.Cartograph.trackAddToCart({ product_id: "prod_012" });
+window.Cartograph.trackCheckoutStarted({});
+window.Cartograph.trackPurchase({
+  product_id: "prod_012",
+  amount: 249.99,
+  currency: "USD"
 });
 ```
 
-Do not put long-lived admin JWTs in browser JavaScript. A public tracking snippet needs scoped ingest keys and rate limiting first.
+Direct collector endpoint:
 
-## Shopify Connector
-
-Shopify is attractive, but harder as a first wedge because:
-
-- native analytics already exists
-- app approval and install flow are more involved
-- strong analytics competitors already serve Shopify deeply
-
-Best Shopify route:
-
-1. Start with webhooks for orders.
-2. Add app proxy or pixel for visitor/cart events.
-3. Position as a live pulse and open-source backend, not attribution.
-
-## Ingest Key Design
-
-Future schema:
-
-```text
-stores
-  id
-  name
-  created_at
-
-store_ingest_keys
-  id
-  store_id
-  key_hash
-  name
-  last_used_at
-  revoked_at
-  created_at
+```bash
+curl -X POST "http://localhost:3001/api/v1/connectors/track" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "store_id": "store_alpha",
+    "ingest_key": "cg_...",
+    "event_type": "add_to_cart",
+    "timestamp": "2026-03-28T13:00:00Z",
+    "data": {
+      "product_id": "prod_012"
+    }
+  }'
 ```
 
-API behavior:
+## WooCommerce Webhook
 
-- dashboard auth uses user JWT
-- event collector uses ingest key
-- collector can only write events for its own store
-- collector cannot read analytics
+Endpoint:
 
-## Minimum Marketable Connector Milestone
+```text
+POST /api/v1/connectors/woocommerce/orders
+```
 
-Amboras becomes meaningfully marketable when one of these is true:
+Headers:
 
-- a WooCommerce store can connect and show purchases within 10 minutes
-- a custom storefront can install a helper and see live events
-- a demo store can replay synthetic events continuously in the hosted dashboard
+```text
+x-cartograph-store-id: store_alpha
+x-cartograph-ingest-key: cg_...
+```
 
-Until then, the project is primarily a proof-of-work artifact.
+Mapping:
+
+| WooCommerce status | Cartograph event |
+| --- | --- |
+| `processing` | `purchase` |
+| `completed` | `purchase` |
+| `pending` | `checkout_started` |
+| `on-hold` | `checkout_started` |
+
+For paid orders, Cartograph emits one purchase event per line item so top-product revenue works immediately. If a payload has no line items, it emits one order-level purchase event.
+
+The mapper reads common WooCommerce order fields such as `id`, `status`, `currency`, `date_created_gmt`, `date_paid_gmt`, `total`, and `line_items`.
+
+## Shopify Webhook
+
+Endpoint:
+
+```text
+POST /api/v1/connectors/shopify/orders
+```
+
+Headers:
+
+```text
+x-cartograph-store-id: store_alpha
+x-cartograph-ingest-key: cg_...
+```
+
+Mapping:
+
+| Shopify financial status | Cartograph event |
+| --- | --- |
+| `paid` | `purchase` |
+| `partially_paid` | `purchase` |
+| `partially_refunded` | `purchase` |
+| `pending` | `checkout_started` |
+| `authorized` | `checkout_started` |
+
+For paid orders, Cartograph emits one purchase event per line item using `price * quantity`. If a payload has no line items, it emits one order-level purchase event from the order total.
+
+The mapper reads common Shopify order fields such as `id`, `financial_status`, `currency`, `created_at`, `processed_at`, `current_total_price`, `total_price`, and `line_items`.
+
+## Idempotency
+
+Connector event IDs are deterministic for WooCommerce and Shopify order lines:
+
+- `woo_order_<order_id>_line_<line_id>`
+- `shopify_order_<order_id>_line_<line_id>`
+
+The raw `events.event_id` column is unique. Duplicate webhook retries are treated as idempotent skips and do not double-count revenue.
+
+## Next Hardening Steps
+
+1. Store hashed, revocable ingest keys.
+2. Add per-key rate limits.
+3. Verify platform-native webhook signatures.
+4. Package a small WooCommerce plugin for one-click webhook setup.
+5. Package a Shopify install flow or Hydrogen helper.

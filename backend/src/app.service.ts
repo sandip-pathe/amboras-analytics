@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 export class AppService {
   getRoot() {
     return {
-      name: 'Amboras Analytics API',
+      name: 'Cartograph API',
       version: '1.0.0',
       status: 'ok',
       docs: 'https://github.com/sandip-pathe/amboras-analytics',
@@ -14,7 +14,7 @@ export class AppService {
   getHealth() {
     return {
       status: 'ok',
-      service: 'amboras-analytics-api',
+      service: 'cartograph-api',
       checkedAt: new Date().toISOString(),
     };
   }

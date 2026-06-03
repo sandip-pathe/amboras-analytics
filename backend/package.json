@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "0.0.1",
-  "description": "NestJS API for Amboras real-time ecommerce analytics.",
+  "description": "NestJS API for Cartograph real-time ecommerce analytics.",
   "author": "",
   "private": true,
   "license": "MIT",

@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: amboras_analytics
+      POSTGRES_DB: cartograph
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
       - "5432:5432"
     volumes:
-      - amboras-postgres:/var/lib/postgresql/data
+      - cartograph-postgres:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d amboras_analytics"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d cartograph"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -19,10 +19,12 @@ services:
     build:
       context: ./backend
     environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/amboras_analytics?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/cartograph?schema=public
       JWT_SECRET: dev-secret-change-in-production
+      CONNECTOR_INGEST_SECRET: dev-ingest-secret-change-in-production
       PORT: 3001
       CORS_ORIGINS: http://localhost:3000
+      PUBLIC_API_URL: http://localhost:3001
     ports:
       - "3001:3001"
     depends_on:
@@ -53,4 +55,4 @@ services:
         condition: service_healthy
 
 volumes:
-  amboras-postgres:
+  cartograph-postgres:

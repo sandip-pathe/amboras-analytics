@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: amboras-analytics-api
+    name: cartograph-api
     runtime: node
     rootDir: backend
     plan: free
@@ -14,13 +14,17 @@ services:
         value: 3001
       - key: DATABASE_URL
         fromDatabase:
-          name: amboras-analytics-db
+          name: cartograph-db
           property: connectionString
       - key: JWT_SECRET
         generateValue: true
+      - key: CONNECTOR_INGEST_SECRET
+        generateValue: true
       - key: CORS_ORIGINS
+        sync: false
+      - key: PUBLIC_API_URL
         sync: false
 
 databases:
-  - name: amboras-analytics-db
+  - name: cartograph-db
     plan: free

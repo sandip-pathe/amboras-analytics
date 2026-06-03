@@ -2,7 +2,7 @@
 
 ## Project Goal
 
-Turn Amboras Analytics into a public proof-of-work project that can be shown to merchants, ecommerce agencies, recruiters, and technical founders.
+Turn Cartograph into a public proof-of-work project that can be shown to merchants, ecommerce agencies, recruiters, and technical founders.
 
 The project should communicate three things:
 
@@ -12,7 +12,7 @@ The project should communicate three things:
 
 ## Product Positioning
 
-Amboras is an open-source real-time ecommerce analytics starter for custom storefronts, WooCommerce-style stores, and agencies that need a live store pulse without building the analytics layer from scratch.
+Cartograph is an open-source real-time ecommerce analytics starter for custom storefronts, WooCommerce-style stores, and agencies that need a live store pulse without building the analytics layer from scratch.
 
 It is not trying to beat Triple Whale, Northbeam, or Polar Analytics on attribution. The wedge is smaller and more practical:
 
@@ -20,6 +20,9 @@ It is not trying to beat Triple Whale, Northbeam, or Polar Analytics on attribut
 - real-time activity feed
 - self-hostable backend
 - developer-friendly event API
+- custom storefront tracking snippet
+- WooCommerce and Shopify order webhook adapters
+- merchant-friendly Store Signals
 - AI-readable analytics via MCP
 
 ## Target Users
@@ -49,6 +52,8 @@ Secondary:
 - React Query DevTools are development-only.
 - Health endpoint exists for hosted/runtime checks.
 - Live demo replay script can stream synthetic events.
+- Connector routes ingest browser, WooCommerce, and Shopify events.
+- Alerts endpoint and dashboard Store Signals panel exist.
 
 ### Open-Source Readiness
 
@@ -69,7 +74,7 @@ Secondary:
 - Demo runbook exists.
 - Launch checklist exists.
 - Outreach scripts exist.
-- Connector roadmap exists.
+- Connector guide exists.
 - Architecture notes exist.
 - Hosted demo can be created from the instructions once hosting credentials are available.
 
@@ -77,7 +82,7 @@ Secondary:
 
 ### Phase 1: Proof-of-Work Packaging
 
-Status: in progress.
+Status: complete locally.
 
 Deliverables:
 
@@ -101,9 +106,9 @@ Deliverables:
 - seeded demo database
 - short walkthrough clip or GIF
 
-### Phase 3: First Connector
+### Phase 3: Connector Packaging
 
-Recommended first connector: WooCommerce.
+Recommended first install package: WooCommerce.
 
 Why:
 
@@ -111,12 +116,18 @@ Why:
 - WordPress developers and agencies are accessible for outreach.
 - A plugin/webhook connector is easier to explain than ad attribution.
 
-Minimum connector:
+Implemented connector path:
 
-- read orders via WooCommerce REST API
-- receive order-created webhook
+- receive WooCommerce order webhooks
+- receive Shopify order webhooks
 - map orders to `purchase` events
-- optional browser snippet for `page_view`, `add_to_cart`, and checkout events
+- browser snippet for `page_view`, `add_to_cart`, checkout, and purchase events
+
+Next connector packaging:
+
+- small WooCommerce plugin for webhook setup
+- Shopify install/helper flow
+- historical order import
 
 ### Phase 4: Feedback Outreach
 
@@ -145,20 +156,20 @@ Based on feedback, choose one:
 
 ## Product Tweaks That Matter Most
 
-1. Add a real connector path.
-2. Add alert rules for merchant moments.
-3. Add proper store/user auth.
-4. Add scoped ingest keys for browser-side tracking.
-5. Add a hosted public demo.
-6. Add one-page case study: "2M events, dashboard still fast."
+1. Add proper store/user auth.
+2. Add hashed, revocable connector keys.
+3. Add rate limiting and native webhook signature verification.
+4. Add a hosted public demo.
+5. Add one-page case study: "2M events, dashboard still fast."
+6. Package WooCommerce/Shopify install helpers.
 
 ## Risks
 
 - The analytics dashboard market is crowded.
 - Shopify merchants already have native analytics and freemium options.
-- Without connectors, the app feels like an engineering demo.
 - Demo auth should not be mistaken for production security.
 - True unique visitor tracking needs session identifiers.
+- Connector keys are proof-of-concept HMAC keys, not a complete key-management system.
 
 ## Success Criteria
 

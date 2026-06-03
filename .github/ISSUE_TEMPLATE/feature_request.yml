@@ -14,7 +14,7 @@ body:
     id: solution
     attributes:
       label: Proposed solution
-      description: What should Amboras do?
+      description: What should Cartograph do?
     validations:
       required: true
   - type: dropdown

@@ -20,7 +20,7 @@ export class EventsController {
     @Req() req: AuthenticatedRequest,
     @Body() dto: CreateEventDto,
   ) {
-    await this.eventsService.ingestEvent(req.user.storeId, dto);
-    return { success: true };
+    const result = await this.eventsService.ingestEvent(req.user.storeId, dto);
+    return { success: true, ...result };
   }
 }

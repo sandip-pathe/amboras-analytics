@@ -26,8 +26,8 @@ function decodeStoreId(token: string): string | null {
   }
 }
 
-const TOKEN_KEY = "amboras_token";
-const AUTH_CHANGED_EVENT = "amboras-auth-changed";
+const TOKEN_KEY = "cartograph_token";
+const AUTH_CHANGED_EVENT = "cartograph-auth-changed";
 
 function getTokenSnapshot(): string | null {
   if (typeof window === "undefined") {

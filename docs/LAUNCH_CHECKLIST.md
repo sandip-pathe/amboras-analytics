@@ -16,7 +16,7 @@ Use this after the repo is pushed and ready to turn into a public proof-of-work 
 
 - [ ] Create a hosted PostgreSQL database.
 - [ ] Deploy backend.
-- [ ] Set `DATABASE_URL`, `JWT_SECRET`, `PORT`, and `CORS_ORIGINS`.
+- [ ] Set `DATABASE_URL`, `JWT_SECRET`, `CONNECTOR_INGEST_SECRET`, `PUBLIC_API_URL`, `PORT`, and `CORS_ORIGINS`.
 - [ ] Run migrations.
 - [ ] Seed demo data.
 - [ ] Confirm `GET /api/v1/health` returns `ok`.
@@ -25,6 +25,9 @@ Use this after the repo is pushed and ready to turn into a public proof-of-work 
 - [ ] Login with `store_alpha`.
 - [ ] Run `API_URL=<backend-url> npm run demo:live` from `backend`.
 - [ ] Confirm live events appear without refresh.
+- [ ] Mint a connector ingest key for `store_alpha`.
+- [ ] Send one `POST /api/v1/connectors/track` event.
+- [ ] Confirm Store Signals render on the dashboard.
 - [ ] Add the demo URL to the root README.
 
 ## Proof Assets
@@ -44,8 +47,9 @@ Use this after the repo is pushed and ready to turn into a public proof-of-work 
 
 ## Product Next Steps
 
-- [ ] Design scoped ingest keys.
-- [ ] Build first WooCommerce connector spike.
-- [ ] Add alert rules for checkout/revenue anomalies.
+- [ ] Store hashed, revocable ingest keys.
+- [ ] Add rate limiting to connector ingestion.
+- [ ] Verify WooCommerce and Shopify native webhook signatures.
+- [ ] Package first WooCommerce install helper.
 - [ ] Add Redis Pub/Sub or broker-backed streams.
 - [ ] Add PostgreSQL Row Level Security.

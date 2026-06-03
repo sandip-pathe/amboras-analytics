@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   type DateRangeParams,
+  getAlerts,
   getLiveVisitors,
   getOverview,
   getRecentActivity,
@@ -42,5 +43,11 @@ export function useAnalytics(range?: DateRangeParams) {
     refetchInterval: 10_000,
   });
 
-  return { overview, topProducts, recentActivity, liveVisitors };
+  const alerts = useQuery({
+    queryKey: ["alerts"],
+    queryFn: getAlerts,
+    refetchInterval: 30_000,
+  });
+
+  return { overview, topProducts, recentActivity, liveVisitors, alerts };
 }

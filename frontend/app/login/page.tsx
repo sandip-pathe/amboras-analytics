@@ -34,7 +34,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen items-center justify-center bg-black px-4 py-10 text-zinc-100">
       <section className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950/70 p-8 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
         <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">
-          Amboras
+          Cartograph
         </p>
         <h1 className="mt-3 text-3xl font-semibold text-white">Store Access</h1>
         <p className="mt-2 text-sm text-zinc-500">

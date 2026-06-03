@@ -1,14 +1,16 @@
-# Amboras Backend
+# Cartograph Backend
 
-NestJS API for the Amboras real-time ecommerce analytics dashboard.
+NestJS API for the Cartograph real-time ecommerce analytics dashboard.
 
 ## Responsibilities
 
 - Mint demo JWTs for store-scoped access.
 - Ingest ecommerce events.
+- Ingest custom storefront, WooCommerce, and Shopify connector events.
 - Write raw event history to PostgreSQL.
 - Maintain daily aggregate stats during ingestion.
 - Serve store-scoped analytics endpoints.
+- Compute merchant-friendly Store Signals.
 - Stream live activity over Server-Sent Events.
 - Expose analytics through the MCP stdio server.
 
@@ -38,6 +40,7 @@ Health check: `http://localhost:3001/api/v1/health`
 ## Key Files
 
 - `src/events/events.service.ts`: event write path and aggregation UPSERT.
+- `src/connectors/connectors.service.ts`: scoped ingest keys, tracking snippet, WooCommerce, and Shopify mappers.
 - `src/analytics/analytics.service.ts`: store-scoped analytics queries.
 - `src/analytics/analytics.controller.ts`: HTTP and SSE endpoints.
 - `prisma/schema.prisma`: `events` and `store_daily_stats` schema.
@@ -45,4 +48,4 @@ Health check: `http://localhost:3001/api/v1/health`
 
 ## Production Notes
 
-The current auth endpoint is intentionally demo-only. A production version should replace it with real user auth, scoped ingest keys, PostgreSQL Row Level Security, and short-lived stream tokens for SSE.
+The current auth endpoint is intentionally demo-only. A production version should replace it with real user auth, hashed and revocable ingest keys, PostgreSQL Row Level Security, rate limiting, native webhook signature verification, and short-lived stream tokens for SSE.

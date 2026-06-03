@@ -4,7 +4,7 @@ Current date: June 2, 2026.
 
 ## A. What Does The App Do?
 
-Amboras Analytics ingests ecommerce behavior events and turns them into a live merchant dashboard.
+Cartograph ingests ecommerce behavior events and turns them into a live merchant dashboard.
 
 Current capabilities:
 
@@ -17,6 +17,9 @@ Current capabilities:
 - live visitor snapshot
 - Server-Sent Events feed
 - store-scoped analytics APIs
+- custom storefront tracking snippet
+- WooCommerce and Shopify order webhook adapters
+- Store Signals for live sales, checkout stalls, revenue drops, and product changes
 - MCP tools for AI-accessible analytics
 
 ## B. What Problem Does It Solve?
@@ -78,7 +81,7 @@ Avoid:
 Minimum additions:
 
 - hosted demo
-- WooCommerce connector plan or first implementation
+- packaged WooCommerce setup helper
 - public README with clear architecture
 - scale proof report
 - demo video/GIF
@@ -86,10 +89,11 @@ Minimum additions:
 
 ### First Real Connector
 
-WooCommerce is the best first connector because:
+The first connector surface now exists. WooCommerce remains the best first packaged install helper because:
 
 - WooCommerce stores are more likely to feel reporting/database pain.
 - WordPress freelancers and agencies are reachable.
+- A small plugin can configure the existing webhook endpoint.
 - The product can start as a lightweight reporting layer without ad attribution.
 
 ### Early Outreach
@@ -106,8 +110,10 @@ Best targets:
 ### Strong Product Angles
 
 - "Live feed of what shoppers are doing now."
+- "Install a snippet or order webhook and see live store movement."
 - "Dashboard stays fast because it reads aggregate rows, not millions of raw events."
 - "Self-hostable analytics backend for custom ecommerce projects."
+- "Merchant-friendly Store Signals instead of raw anomaly charts."
 - "AI-ready analytics via MCP."
 - "Plain merchant language instead of raw event names."
 
@@ -122,7 +128,7 @@ Best targets:
 
 ## Bottom Line
 
-The pain is real, but the broad category is mature. The practical path is to use Amboras as:
+The pain is real, but the broad category is mature. The practical path is to use Cartograph as:
 
 1. a public proof-of-work artifact
 2. an open-source starter kit

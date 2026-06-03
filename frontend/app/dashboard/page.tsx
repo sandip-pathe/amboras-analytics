@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
 import { useAnalytics } from "../../hooks/useAnalytics";
 import { useLiveFeed } from "../../hooks/useLiveFeed";
+import { AlertsPanel } from "../../components/AlertsPanel";
 import { EventTypeChart } from "../../components/EventTypeChart";
 import { LiveVisitorsCard } from "../../components/LiveVisitorsCard";
 import { MetricCard } from "../../components/MetricCard";
@@ -93,7 +94,7 @@ export default function DashboardPage() {
   );
   const rangeLabel = `Selected Range (${rangeDayCount} days)`;
 
-  const { overview, topProducts, recentActivity, liveVisitors } =
+  const { overview, topProducts, recentActivity, liveVisitors, alerts } =
     useAnalytics(selectedRange);
   const { events: liveEvents, isConnected } = useLiveFeed(
     recentActivity.data?.events,
@@ -276,6 +277,11 @@ export default function DashboardPage() {
             asOf={liveVisitorsData.asOf}
           />
         </section>
+
+        <AlertsPanel
+          alerts={alerts.data?.alerts ?? []}
+          isLoading={alerts.isLoading}
+        />
 
         <section className="rounded-xl border border-[#e8e4de] bg-white/95 px-5 py-4 text-center backdrop-blur-[2px]">
           <p className="text-sm text-[#6f6d67]">

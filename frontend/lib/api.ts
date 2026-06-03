@@ -38,6 +38,22 @@ type LiveVisitorsResponse = {
   asOf: string;
 };
 
+type StoreAlert = {
+  id: string;
+  severity: "critical" | "warning" | "info" | "success";
+  title: string;
+  message: string;
+  metricLabel: string;
+  metricValue: string;
+  createdAt: string;
+};
+
+type AlertsResponse = {
+  generatedAt: string;
+  windowMinutes: number;
+  alerts: StoreAlert[];
+};
+
 type TokenResponse = {
   access_token: string;
 };
@@ -67,7 +83,7 @@ async function request<T>(
   headers.set("Content-Type", "application/json");
 
   if (withAuth && typeof window !== "undefined") {
-    const token = localStorage.getItem("amboras_token");
+    const token = localStorage.getItem("cartograph_token");
     if (token) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -125,6 +141,10 @@ export function getLiveVisitors(windowMinutes = 5) {
   );
 }
 
+export function getAlerts() {
+  return request<AlertsResponse>("/api/v1/analytics/alerts");
+}
+
 export function postToken(storeId: string) {
   return request<TokenResponse>(
     "/api/v1/auth/token",
@@ -141,6 +161,8 @@ export type {
   TopProductsResponse,
   RecentActivityResponse,
   LiveVisitorsResponse,
+  StoreAlert,
+  AlertsResponse,
   TokenResponse,
   DateRangeParams,
 };

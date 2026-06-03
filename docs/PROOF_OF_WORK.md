@@ -1,6 +1,6 @@
 # Proof-of-Work Checklist
 
-Amboras is meant to show product thinking and engineering execution. This checklist ties each proof claim to concrete evidence in the repo.
+Cartograph is meant to show product thinking and engineering execution. This checklist ties each proof claim to concrete evidence in the repo.
 
 ## Product Proof
 
@@ -30,6 +30,53 @@ cd backend
 npm audit --audit-level=moderate
 npm run build
 npm test -- --runInBand
+```
+
+## Connector Proof
+
+Claim: Real store surfaces can send data without dashboard JWTs.
+
+Evidence:
+
+- `backend/src/connectors/connectors.controller.ts`
+- `backend/src/connectors/connectors.service.ts`
+- `backend/src/connectors/connectors.service.spec.ts`
+- `docs/CONNECTOR_ROADMAP.md`
+
+Verification:
+
+```bash
+cd backend
+npm test -- --runInBand
+```
+
+Manual check:
+
+```bash
+curl "http://localhost:3001/api/v1/connectors/ingest-key" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+## Store Signals Proof
+
+Claim: The dashboard surfaces merchant-friendly operational alerts, not only charts.
+
+Evidence:
+
+- `backend/src/analytics/analytics.service.ts`
+- `backend/src/analytics/analytics.service.spec.ts`
+- `frontend/components/AlertsPanel.tsx`
+- `frontend/app/dashboard/page.tsx`
+
+Verification:
+
+```bash
+cd backend
+npm test -- --runInBand
+
+cd ../frontend
+npm run build
+npm run lint
 ```
 
 Runtime check:

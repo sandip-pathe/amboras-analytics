@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "version": "0.1.0",
-  "description": "Next.js dashboard for Amboras real-time ecommerce analytics.",
+  "description": "Next.js dashboard for Cartograph real-time ecommerce analytics.",
   "private": true,
   "license": "MIT",
   "scripts": {

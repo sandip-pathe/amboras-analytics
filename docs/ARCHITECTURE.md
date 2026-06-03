@@ -2,14 +2,16 @@
 
 ## System Summary
 
-Amboras is a real-time analytics system for ecommerce events.
+Cartograph is a real-time analytics system for ecommerce events.
 
 It has four core paths:
 
 1. Event ingestion.
 2. Write-time aggregation.
 3. Store-scoped analytics reads.
-4. Live activity streaming.
+4. Connector ingestion.
+5. Merchant alert signals.
+6. Live activity streaming.
 
 ## Data Model
 
@@ -74,6 +76,7 @@ That is the core performance proof.
 ```mermaid
 sequenceDiagram
   participant Client
+  participant Connector
   participant API
   participant DB
   participant Bus
@@ -85,6 +88,8 @@ sequenceDiagram
   API->>DB: UPSERT daily aggregate
   API->>Bus: Emit event.ingested
   Bus->>Dashboard: SSE event for matching store
+  Connector->>API: POST /api/v1/connectors/*
+  API->>API: Validate scoped ingest key
 ```
 
 The write path runs inside a Prisma transaction. If the raw event write fails, the aggregate update does not commit. If the aggregate update fails, the raw event does not commit.
@@ -98,9 +103,42 @@ Writes also require the authenticated store to match the event payload `store_id
 Production hardening:
 
 - real user auth
-- scoped ingest keys
+- hashed, revocable scoped ingest keys
 - PostgreSQL Row Level Security
 - audit logs for API access
+
+## Connector Layer
+
+The connector layer normalizes public store data into the same `CreateEventDto` shape used by the authenticated event API.
+
+Implemented connectors:
+
+- `GET /api/v1/connectors/ingest-key`: returns the store-scoped HMAC ingest key, tracking snippet, endpoint URLs, and webhook headers for the authenticated store.
+- `GET /api/v1/connectors/snippet.js`: serves the browser snippet for custom storefronts.
+- `POST /api/v1/connectors/track`: accepts public browser events with a scoped ingest key.
+- `POST /api/v1/connectors/woocommerce/orders`: maps WooCommerce order payloads to `purchase` or `checkout_started`.
+- `POST /api/v1/connectors/shopify/orders`: maps Shopify order payloads to `purchase` or `checkout_started`.
+
+Connector security:
+
+- the key is scoped to one store ID
+- connector writes never read analytics
+- duplicate event IDs are treated as idempotent skips
+- production should add hashed key storage, revocation, rate limiting, and native webhook signature verification
+
+## Store Signals
+
+`GET /api/v1/analytics/alerts` computes merchant-friendly signals from recent events and daily stats.
+
+Current rules:
+
+- high visitors with zero carts
+- checkout started but no purchases
+- revenue dropped vs yesterday
+- top product changed today
+- live sale happened
+
+These are computed on read rather than persisted. That keeps the proof-of-concept simple and gives the dashboard useful operational language without adding another table yet.
 
 ## Real-Time Layer
 
@@ -147,25 +185,24 @@ The MCP server wraps existing analytics endpoints as tools:
 - dashboard snapshot
 - store isolation verification
 
-This makes Amboras useful as an AI-agent data surface, not only a human dashboard.
+This makes Cartograph useful as an AI-agent data surface, not only a human dashboard.
 
 ## Scaling Path
 
 Near-term:
 
 - keep write-time aggregation
-- add connector ingestion
 - add rate limiting
 
 Mid-term:
 
 - add Redis Pub/Sub for streams
-- add scoped ingest keys
+- add hashed, revocable scoped ingest keys
 - add PostgreSQL RLS
 
 Long-term:
 
 - TimescaleDB continuous aggregates
-- alert rules
+- persisted alert history and notification channels
 - customer/session tracking
 - warehouse export

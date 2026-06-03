@@ -82,12 +82,12 @@ function asTextContent(data) {
 
 const server = new McpServer(
   {
-    name: "amboras-analytics-mcp",
+    name: "cartograph-mcp",
     version: "1.0.0",
   },
   {
     instructions:
-      "Analytics MCP for Amboras. All tools are store-scoped and safe for multi-tenant usage when storeId is provided.",
+      "Analytics MCP for Cartograph. All tools are store-scoped and safe for multi-tenant usage when storeId is provided.",
   },
 );
 
@@ -174,8 +174,22 @@ server.tool(
 );
 
 server.tool(
+  "get_alerts",
+  "Fetches merchant-friendly Store Signals for one store.",
+  {
+    storeId: z.string().min(2).max(64),
+  },
+  async ({ storeId }) => {
+    const token = await getStoreToken(storeId);
+    const alerts = await fetchJson("/analytics/alerts", token);
+
+    return asTextContent({ storeId, alerts });
+  },
+);
+
+server.tool(
   "get_dashboard_snapshot",
-  "Returns overview, top-products, recent-activity, and live-visitors in one call.",
+  "Returns overview, top-products, recent-activity, live-visitors, and alerts in one call.",
   {
     storeId: z.string().min(2).max(64),
     startDate: z.string().optional(),
@@ -186,7 +200,7 @@ server.tool(
     const token = await getStoreToken(storeId);
     const safeWindow = windowMinutes ?? 5;
 
-    const [overview, topProducts, recentActivity, liveVisitors] =
+    const [overview, topProducts, recentActivity, liveVisitors, alerts] =
       await Promise.all([
         fetchJson(withDateRange("/analytics/overview", startDate, endDate), token),
         fetchJson(
@@ -198,6 +212,7 @@ server.tool(
           token,
         ),
         fetchJson(`/analytics/live-visitors?windowMinutes=${safeWindow}`, token),
+        fetchJson("/analytics/alerts", token),
       ]);
 
     return asTextContent({
@@ -208,6 +223,7 @@ server.tool(
       topProducts,
       recentActivity,
       liveVisitors,
+      alerts,
     });
   },
 );

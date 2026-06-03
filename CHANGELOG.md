@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Amboras Analytics are documented here.
+All notable changes to Cartograph are documented here.
 
 ## Unreleased
 

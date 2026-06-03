@@ -69,7 +69,7 @@ export function useLiveFeed(
   );
 
   useEffect(() => {
-    const token = localStorage.getItem("amboras_token");
+    const token = localStorage.getItem("cartograph_token");
     if (!token) {
       return;
     }
